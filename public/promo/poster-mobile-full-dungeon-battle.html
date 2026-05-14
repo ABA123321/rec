@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Rune Abyss · 副本远征宣发（官网视觉）</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* 与 app/globals.css 品牌定义对齐：金 primary / 青 accent / 暗底 background */
+    :root {
+      --bg: #12161c;
+      --foreground: #f4f1ea;
+      --card: rgba(28, 32, 42, 0.72);
+      --border: rgba(255, 255, 255, 0.12);
+      --primary: #d4af37;
+      --primary-glow: rgba(212, 175, 55, 0.5);
+      --accent: #2ec4b8;
+      --accent-dim: rgba(46, 196, 184, 0.45);
+      --muted: #9aa3b2;
+      --destructive: #e85d4a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--foreground);
+      font-family: ui-sans-serif, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+    .poster {
+      width: 1080px;
+      height: 1920px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    /* ── 与首页 Hero 相同的底图层叠 ── */
+    .bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    .bg-hero {
+      position: absolute;
+      inset: 0;
+      background: url("/hero-rune-abyss.jpg") center / cover no-repeat;
+      opacity: 0.42;
+    }
+    .bg-site {
+      position: absolute;
+      inset: 0;
+      background: url("/site-bg-abyss.jpg") center / cover no-repeat;
+      opacity: 0.22;
+    }
+    .bg-grad {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--bg) 40%, transparent) 0%,
+        color-mix(in oklab, var(--bg) 72%, transparent) 45%,
+        var(--bg) 100%
+      );
+    }
+    .bg-pattern {
+      position: absolute;
+      inset: -20%;
+      background: url("/rune-pattern.jpg") center / 120% no-repeat;
+      opacity: 0.14;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+    .bg-sigil {
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      transform: translate(-50%, -50%);
+      width: 92%;
+      height: 50%;
+      background: url("/rune-sigil.png") center / contain no-repeat;
+      opacity: 0.06;
+      pointer-events: none;
+    }
+    .vignette {
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.55);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 36px 40px 28px;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .brand-text {
+      flex: 1;
+    }
+    .brand-text .en {
+      font-family: Cinzel, Georgia, serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--primary);
+      text-shadow: 0 0 18px var(--primary-glow), 0 0 4px var(--primary-glow);
+      line-height: 1.1;
+    }
+    .brand-text .zh {
+      margin-top: 6px;
+      font-size: 40px;
+      font-weight: 600;
+      letter-spacing: 0.45em;
+      color: color-mix(in oklab, var(--foreground) 92%, transparent);
+      line-height: 1.15;
+    }
+
+    /* 首页 Badge 风格 */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklab, var(--primary) 40%, transparent);
+      background: color-mix(in oklab, var(--primary) 10%, transparent);
+      font-family: ui-monospace, "Cascadia Mono", monospace;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: 0.04em;
+      margin-bottom: 16px;
+    }
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .tagline {
+      font-size: 22px;
+      line-height: 1.65;
+      color: var(--muted);
+      max-width: 100%;
+      margin-bottom: 18px;
+    }
+    .tagline strong {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+      min-height: 0;
+    }
+
+    /* 真实副本图 + 游戏 UI 叠层 */
+    .battle {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow:
+        0 0 0 1px color-mix(in oklab, var(--primary) 25%, transparent),
+        0 24px 60px rgba(0, 0, 0, 0.5);
+      height: 520px;
+      background: #0a0d12 url("/dungeons/d6-abyssal-throne.jpg") center / cover no-repeat;
+    }
+    .battle-shade {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(10, 13, 18, 0.92) 0%,
+        rgba(10, 13, 18, 0.25) 45%,
+        rgba(10, 13, 18, 0.55) 100%
+      );
+    }
+    .battle-top {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in oklab, var(--bg) 88%, transparent);
+      backdrop-filter: blur(8px);
+    }
+    .dungeon-label {
+      font-family: ui-monospace, monospace;
+      font-size: 14px;
+      letter-spacing: 0.14em;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .dungeon-title {
+      text-align: right;
+    }
+    .dungeon-title .n {
+      font-family: Cinzel, serif;
+      font-size: 20px;
+      color: var(--primary);
+      letter-spacing: 0.08em;
+    }
+    .dungeon-title .b {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .boss-ui {
+      position: absolute;
+      top: 88px;
+      left: 18px;
+      right: 18px;
+      z-index: 2;
+    }
+    .boss-ui label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--destructive);
+      letter-spacing: 0.2em;
+      margin-bottom: 6px;
+      font-family: ui-monospace, monospace;
+    }
+    .hp-bar {
+      height: 12px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .hp-fill {
+      height: 100%;
+      width: 66%;
+      background: linear-gradient(90deg, #7f1d1d, var(--destructive));
+      box-shadow: 0 0 14px rgba(232, 93, 74, 0.45);
+    }
+    .dmg {
+      position: absolute;
+      top: 38%;
+      right: 18%;
+      font-family: Cinzel, serif;
+      font-size: 38px;
+      font-weight: 700;
+      color: #fde68a;
+      text-shadow: 0 0 20px rgba(253, 230, 138, 0.7), 0 2px 8px #000;
+      transform: rotate(-6deg);
+      z-index: 2;
+    }
+    .state-tag {
+      position: absolute;
+      bottom: 108px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      padding: 10px 28px;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.28em;
+      color: var(--bg);
+      background: linear-gradient(90deg, var(--primary), #f5e6a8);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+    }
+    .party {
+      position: absolute;
+      bottom: 14px;
+      left: 0;
+      right: 0;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+    .hero-slot {
+      width: 76px;
+      height: 96px;
+      border-radius: 12px;
+      border: 2px solid color-mix(in oklab, var(--primary) 35%, transparent);
+      overflow: hidden;
+      background: var(--card);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    }
+    .hero-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+    }
+
+    /* 首页 Hero 参数四格 */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .stat {
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: color-mix(in oklab, var(--card) 100%, transparent);
+      padding: 14px 16px;
+      backdrop-filter: blur(10px);
+    }
+    .stat dt {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+    }
+    .stat dd.v {
+      margin-top: 6px;
+      font-family: Cinzel, serif;
+      font-size: 26px;
+      color: var(--foreground);
+    }
+    .stat dd.s {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .section-label {
+      text-align: center;
+      font-size: 11px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .section-title {
+      text-align: center;
+      font-family: Cinzel, serif;
+      font-size: 22px;
+      color: var(--foreground);
+      margin-bottom: 12px;
+    }
+    .grid4 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .cell {
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: color-mix(in oklab, var(--card) 100%, transparent);
+      padding: 14px 16px;
+    }
+    .cell h3 {
+      font-size: 16px;
+      color: var(--primary);
+      letter-spacing: 0.12em;
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+    .cell p {
+      font-size: 15px;
+      line-height: 1.5;
+      color: color-mix(in oklab, var(--foreground) 78%, transparent);
+    }
+
+    .fine {
+      text-align: center;
+      font-size: 12px;
+      color: color-mix(in oklab, var(--muted) 90%, transparent);
+      line-height: 1.5;
+      margin-top: 4px;
+    }
+
+    .footer {
+      flex-shrink: 0;
+      padding: 20px 40px 32px;
+      border-top: 1px solid var(--border);
+      background: linear-gradient(0deg, rgba(0, 0, 0, 0.35), transparent);
+      position: relative;
+      z-index: 2;
+    }
+    .cta {
+      text-align: center;
+      font-family: Cinzel, serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      color: var(--primary);
+      text-shadow: 0 0 16px var(--primary-glow);
+      margin-bottom: 8px;
+    }
+    .cta-sub {
+      text-align: center;
+      font-size: 17px;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .eco {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px 24px;
+      margin-bottom: 14px;
+    }
+    .eco img {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      opacity: 0.85;
+      filter: grayscale(0.2);
+    }
+    .dis {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    @media print {
+      html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="bg" aria-hidden="true">
+      <div class="bg-hero"></div>
+      <div class="bg-site"></div>
+      <div class="bg-grad"></div>
+      <div class="bg-pattern"></div>
+      <div class="bg-sigil"></div>
+    </div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <div class="content">
+      <div class="brand-row">
+        <!-- 与 components/brand/rune-abyss-logo.tsx 一致 -->
+        <svg viewBox="0 0 64 64" width="56" height="56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="poster-ra-gold" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f5d28a" />
+              <stop offset="45%" stop-color="#d4af37" />
+              <stop offset="100%" stop-color="#7a4f12" />
+            </linearGradient>
+            <radialGradient id="poster-ra-sheen" cx="35%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#fff5d6" stop-opacity="0.55" />
+              <stop offset="60%" stop-color="#fff5d6" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+          <circle cx="32" cy="32" r="30" fill="#d4af37" />
+          <circle cx="32" cy="32" r="30" fill="url(#poster-ra-gold)" />
+          <circle cx="32" cy="32" r="30" fill="url(#poster-ra-sheen)" />
+          <circle cx="32" cy="32" r="29.25" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="1.5" />
+          <circle cx="32" cy="32" r="24" fill="none" stroke="rgba(20, 184, 166, 0.55)" stroke-width="0.6" stroke-dasharray="1.5 2.5" />
+          <g stroke="rgba(10,13,18,0.75)" stroke-width="2" stroke-linecap="round">
+            <line x1="32" y1="4.5" x2="32" y2="9" />
+            <line x1="32" y1="55" x2="32" y2="59.5" />
+            <line x1="4.5" y1="32" x2="9" y2="32" />
+            <line x1="55" y1="32" x2="59.5" y2="32" />
+          </g>
+          <g stroke="#0a0d12" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <path d="M19 46 L32 17 L45 46" />
+            <path d="M25 36 L39 36" />
+            <path d="M16 46 L22 46" />
+            <path d="M42 46 L48 46" />
+          </g>
+          <circle cx="32" cy="44" r="1.6" fill="#0a0d12" />
+          <circle cx="32" cy="44" r="0.7" fill="#5eead4" />
+        </svg>
+        <div class="brand-text">
+          <p class="en">Rune Abyss</p>
+          <p class="zh">符 文 深 渊</p>
+        </div>
+      </div>
+
+      <div class="badge"><span class="badge-dot" aria-hidden="true"></span>BSC · Chain ID 56 · 公平发射</div>
+
+      <p class="tagline">
+        零通胀链游 · 3 角色组队 · 挑战副本产出材料 · 纯 USDT 内盘 · 材料合成稀有冒险者。代币 <strong>$REBC</strong>，总量 10 亿。
+      </p>
+
+      <div class="main">
+        <div class="battle" role="img" aria-label="深渊王座副本战斗示意">
+          <div class="battle-shade" aria-hidden="true"></div>
+          <div class="battle-top">
+            <span class="dungeon-label">DUNGEON 6 / 550 PWR</span>
+            <div class="dungeon-title">
+              <div class="n">深渊王座</div>
+              <div class="b">BOSS · 深渊主宰</div>
+            </div>
+          </div>
+          <div class="boss-ui">
+            <label><span>BOSS HP</span><span>66%</span></label>
+            <div class="hp-bar"><div class="hp-fill"></div></div>
+          </div>
+          <div class="dmg">− 12,480</div>
+          <div class="state-tag">链上结算</div>
+          <div class="party">
+            <div class="hero-slot"><img src="/characters/r3-elite.jpg" alt="" /></div>
+            <div class="hero-slot"><img src="/characters/r4-hero.jpg" alt="" /></div>
+            <div class="hero-slot"><img src="/characters/r2-adept.jpg" alt="" /></div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <dt>代币总量</dt>
+            <dd class="v">10 亿</dd>
+            <dd class="s">$REBC</dd>
+          </div>
+          <div class="stat">
+            <dt>角色上限</dt>
+            <dd class="v">6,000</dd>
+            <dd class="s">全服稀缺</dd>
+          </div>
+          <div class="stat">
+            <dt>体力价格</dt>
+            <dd class="v">0.5 U</dd>
+            <dd class="s">新手可领 5 点</dd>
+          </div>
+          <div class="stat">
+            <dt>副本等级</dt>
+            <dd class="v">6 阶</dd>
+            <dd class="s">战力门槛递增</dd>
+          </div>
+        </div>
+
+        <div>
+          <p class="section-label">On-chain loop</p>
+          <p class="section-title">副本与链上机制</p>
+          <div class="grid4">
+            <div class="cell">
+              <h3>秘境与体力</h3>
+              <p>6 级副本对应战力门槛 45→550；每点体力挑战一次（以合约为准）。</p>
+            </div>
+            <div class="cell">
+              <h3>胜负与掉落</h3>
+              <p>胜利全额材料，失败仍按比例掉落；结果可由链上事件复核。</p>
+            </div>
+            <div class="cell">
+              <h3>队伍规则</h3>
+              <p>3 将编队；单账号最多 8 队，每队独立 24h 冷却。</p>
+            </div>
+            <div class="cell">
+              <h3>召唤与合成</h3>
+              <p>召唤 50,000 $REBC 起，每 1000 次 +10%；合成 100% 销毁入黑洞。</p>
+            </div>
+          </div>
+        </div>
+
+        <p class="fine">宣发画面使用官网同款美术资源；非实时链上状态。不构成投资建议。</p>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p class="cta">RUNEAS.XYZ</p>
+      <p class="cta-sub">https://x.com/RuneAbyssAI · @RuneAbyssAI</p>
+      <div class="eco" aria-hidden="true">
+        <img src="/ecosystem/metamask.svg" alt="" />
+        <img src="/ecosystem/walletconnect.svg" alt="" />
+        <img src="/ecosystem/trustwallet.svg" alt="" />
+        <img src="/ecosystem/bnbchain.svg" alt="" />
+        <img src="/ecosystem/coingecko.svg" alt="" />
+        <img src="/ecosystem/coinmarketcap.svg" alt="" />
+      </div>
+      <p class="dis">请通过官方 HTTPS 进入游戏。链上操作不可逆；代币与 NFT 有风险。</p>
+    </footer>
+  </div>
+</body>
+</html>

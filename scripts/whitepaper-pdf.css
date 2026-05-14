@@ -1,0 +1,54 @@
+/* md-to-pdf 白皮书样式 · A4 对外版 */
+html {
+  font-size: 11pt;
+}
+body {
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", "SimSun", sans-serif;
+  line-height: 1.65;
+  color: #1a1a1a;
+  word-break: break-word;
+}
+h1 {
+  font-size: 22pt;
+  border-bottom: 2px solid #2c5282;
+  padding-bottom: 0.35em;
+  margin-top: 0;
+  color: #1a365d;
+}
+h2 {
+  font-size: 14pt;
+  margin-top: 1.4em;
+  color: #2c5282;
+}
+p { margin: 0.6em 0; }
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  font-size: 10pt;
+}
+th, td {
+  border: 1px solid #cbd5e0;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: #edf2f7; }
+hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 1.2em 0;
+}
+code {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.9em;
+  background: #f7fafc;
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+blockquote {
+  margin: 0.8em 0;
+  padding-left: 1em;
+  border-left: 4px solid #ecc94b;
+  color: #4a5568;
+}

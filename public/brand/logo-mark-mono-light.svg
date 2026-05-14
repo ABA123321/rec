@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Mono mark: light strokes, dark background -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Rune Abyss mark mono light">
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#f4e8c8" stroke-width="8" opacity="0.95"/>
+  <circle cx="128" cy="128" r="96" fill="none" stroke="#5eead4" stroke-width="2.4" stroke-dasharray="6 10" opacity="0.75"/>
+  <g stroke="#f4e8c8" stroke-width="8" stroke-linecap="round" opacity="0.9">
+    <line x1="128" y1="18" x2="128" y2="36"/>
+    <line x1="128" y1="220" x2="128" y2="238"/>
+    <line x1="18" y1="128" x2="36" y2="128"/>
+    <line x1="220" y1="128" x2="238" y2="128"/>
+  </g>
+  <g stroke="#f8fafc" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M76 184 L128 68 L180 184"/>
+    <path d="M100 144 L156 144"/>
+    <path d="M64 184 L88 184"/>
+    <path d="M168 184 L192 184"/>
+  </g>
+  <circle cx="128" cy="176" r="6.4" fill="#f8fafc"/>
+  <circle cx="128" cy="176" r="2.8" fill="#5eead4"/>
+</svg>

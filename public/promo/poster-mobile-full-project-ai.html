@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Rune Abyss · 项目全景（官网视觉）</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #12161c;
+      --foreground: #f4f1ea;
+      --card: rgba(28, 32, 42, 0.72);
+      --border: rgba(255, 255, 255, 0.12);
+      --primary: #d4af37;
+      --primary-glow: rgba(212, 175, 55, 0.5);
+      --accent: #2ec4b8;
+      --muted: #9aa3b2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--foreground);
+      font-family: ui-sans-serif, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+    .poster {
+      width: 1080px;
+      height: 1920px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    .bg-hero {
+      position: absolute;
+      inset: 0;
+      background: url("/hero-rune-abyss.jpg") center / cover no-repeat;
+      opacity: 0.4;
+    }
+    .bg-site {
+      position: absolute;
+      inset: 0;
+      background: url("/site-bg-abyss.jpg") center / cover no-repeat;
+      opacity: 0.28;
+    }
+    .bg-grad {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--bg) 38%, transparent) 0%,
+        color-mix(in oklab, var(--bg) 78%, transparent) 50%,
+        var(--bg) 100%
+      );
+    }
+    .bg-pattern {
+      position: absolute;
+      inset: -15%;
+      background: url("/rune-pattern.jpg") center / 110% no-repeat;
+      opacity: 0.12;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+    .bg-sigil {
+      position: absolute;
+      left: 50%;
+      top: 48%;
+      transform: translate(-50%, -50%);
+      width: 95%;
+      height: 55%;
+      background: url("/rune-sigil.png") center / contain no-repeat;
+      opacity: 0.07;
+      pointer-events: none;
+    }
+    .vignette {
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.6);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding: 32px 36px 12px;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .brand-text .en {
+      font-family: Cinzel, Georgia, serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--primary);
+      text-shadow: 0 0 18px var(--primary-glow), 0 0 4px var(--primary-glow);
+    }
+    .brand-text .zh {
+      margin-top: 6px;
+      font-size: 40px;
+      font-weight: 600;
+      letter-spacing: 0.45em;
+      color: color-mix(in oklab, var(--foreground) 92%, transparent);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklab, var(--primary) 40%, transparent);
+      background: color-mix(in oklab, var(--primary) 10%, transparent);
+      font-family: ui-monospace, monospace;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 14px;
+    }
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .hero-copy {
+      font-size: 21px;
+      line-height: 1.68;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .hero-copy .gold {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 14px;
+      min-height: 0;
+      padding-bottom: 8px;
+    }
+
+    /* 首页「副本远征」条：真实 d6 图 */
+    .dungeon-banner {
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+    .dungeon-banner .cap {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: color-mix(in oklab, var(--bg) 92%, transparent);
+      border-bottom: 1px solid var(--border);
+      font-family: ui-monospace, monospace;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .dungeon-banner .thumb {
+      height: 160px;
+      background: url("/dungeons/d6-abyssal-throne.jpg") center / cover no-repeat;
+      position: relative;
+    }
+    .dungeon-banner .thumb::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(10, 13, 18, 0.85), transparent 55%);
+    }
+    .dungeon-banner .thumb span {
+      position: absolute;
+      bottom: 12px;
+      left: 16px;
+      z-index: 1;
+      font-family: Cinzel, serif;
+      font-size: 22px;
+      color: var(--primary);
+      text-shadow: 0 0 12px rgba(0, 0, 0, 0.8);
+    }
+
+    .loop-label {
+      font-size: 11px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .loop-title {
+      font-family: Cinzel, serif;
+      font-size: 24px;
+      margin-bottom: 10px;
+      line-height: 1.25;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .feat {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: color-mix(in oklab, var(--card) 100%, transparent);
+      padding: 14px 14px 14px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 118px;
+    }
+    .feat-ic {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
+      background: color-mix(in oklab, var(--primary) 10%, transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary);
+    }
+    .feat-ic svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .feat h3 {
+      font-family: Cinzel, serif;
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .feat p {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--muted);
+      flex: 1;
+    }
+    .feat .more {
+      font-size: 11px;
+      color: var(--primary);
+      letter-spacing: 0.08em;
+    }
+
+    /* 首页 Economy 区：三格 + 符印卡 */
+    .economy {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .economy-text {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: color-mix(in oklab, var(--card) 100%, transparent);
+      padding: 14px 16px;
+    }
+    .economy-text .lbl {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .economy-text h3 {
+      font-family: Cinzel, serif;
+      font-size: 20px;
+      margin: 6px 0 8px;
+    }
+    .economy-text p {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .eco-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .eco-stats div {
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: color-mix(in oklab, var(--bg) 60%, transparent);
+      padding: 8px 6px;
+      text-align: center;
+    }
+    .eco-stats .k { font-size: 10px; color: var(--muted); }
+    .eco-stats .v { font-family: Cinzel, serif; font-size: 18px; color: var(--primary); margin-top: 2px; }
+    .eco-stats .s { font-size: 9px; color: var(--muted); }
+
+    .sigil-card {
+      border-radius: 14px;
+      border: 1px solid color-mix(in oklab, var(--border) 120%, transparent);
+      overflow: hidden;
+      position: relative;
+      min-height: 168px;
+      background: linear-gradient(135deg, color-mix(in oklab, var(--card) 80%, transparent), rgba(10, 12, 18, 0.9));
+    }
+    .sigil-card img.bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.35;
+    }
+    .sigil-card .lay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top right, color-mix(in oklab, var(--bg) 45%, transparent), transparent);
+    }
+    .sigil-card .inner {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .sigil-card .advent {
+      font-family: Cinzel, serif;
+      font-size: 22px;
+      color: var(--primary);
+      text-shadow: 0 0 14px var(--primary-glow);
+    }
+    .sigil-card .sub {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .sigil-card .pill-btn {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: color-mix(in oklab, var(--card) 90%, transparent);
+      font-size: 11px;
+      color: var(--foreground);
+    }
+    .sigil-card .pill-btn svg { width: 14px; height: 14px; }
+
+    /* 符文妹妹：应用层说明，风格贴近品牌青紫 */
+    .ai {
+      border-radius: 14px;
+      padding: 2px;
+      background: linear-gradient(120deg, color-mix(in oklab, var(--accent) 45%, transparent), color-mix(in oklab, var(--primary) 35%, transparent));
+    }
+    .ai-inner {
+      border-radius: 12px;
+      background: color-mix(in oklab, var(--bg) 92%, transparent);
+      padding: 14px 16px;
+    }
+    .ai-inner h4 {
+      font-size: 12px;
+      letter-spacing: 0.28em;
+      color: var(--accent);
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+    .ai-inner p {
+      font-size: 14px;
+      line-height: 1.55;
+      color: color-mix(in oklab, var(--foreground) 85%, transparent);
+    }
+
+    .footer {
+      flex-shrink: 0;
+      padding: 14px 36px 28px;
+      border-top: 1px solid var(--border);
+      background: color-mix(in oklab, var(--bg) 85%, transparent);
+      position: relative;
+      z-index: 2;
+    }
+    .cta {
+      text-align: center;
+      font-family: Cinzel, serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      color: var(--primary);
+      text-shadow: 0 0 16px var(--primary-glow);
+    }
+    .x {
+      text-align: center;
+      font-size: 16px;
+      color: var(--accent);
+      margin-top: 6px;
+      margin-bottom: 12px;
+    }
+    .eco {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px 22px;
+      margin-bottom: 10px;
+    }
+    .eco img {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+      opacity: 0.88;
+    }
+    .dis {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+    @media print {
+      html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="bg" aria-hidden="true">
+      <div class="bg-hero"></div>
+      <div class="bg-site"></div>
+      <div class="bg-grad"></div>
+      <div class="bg-pattern"></div>
+      <div class="bg-sigil"></div>
+    </div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <div class="content">
+      <div class="brand-row">
+        <svg viewBox="0 0 64 64" width="56" height="56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="p2-gold" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f5d28a" />
+              <stop offset="45%" stop-color="#d4af37" />
+              <stop offset="100%" stop-color="#7a4f12" />
+            </linearGradient>
+            <radialGradient id="p2-sheen" cx="35%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#fff5d6" stop-opacity="0.55" />
+              <stop offset="60%" stop-color="#fff5d6" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+          <circle cx="32" cy="32" r="30" fill="#d4af37" />
+          <circle cx="32" cy="32" r="30" fill="url(#p2-gold)" />
+          <circle cx="32" cy="32" r="30" fill="url(#p2-sheen)" />
+          <circle cx="32" cy="32" r="29.25" fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="1.5" />
+          <circle cx="32" cy="32" r="24" fill="none" stroke="rgba(20, 184, 166, 0.55)" stroke-width="0.6" stroke-dasharray="1.5 2.5" />
+          <g stroke="rgba(10,13,18,0.75)" stroke-width="2" stroke-linecap="round">
+            <line x1="32" y1="4.5" x2="32" y2="9" />
+            <line x1="32" y1="55" x2="32" y2="59.5" />
+            <line x1="4.5" y1="32" x2="9" y2="32" />
+            <line x1="55" y1="32" x2="59.5" y2="32" />
+          </g>
+          <g stroke="#0a0d12" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <path d="M19 46 L32 17 L45 46" />
+            <path d="M25 36 L39 36" />
+            <path d="M16 46 L22 46" />
+            <path d="M42 46 L48 46" />
+          </g>
+          <circle cx="32" cy="44" r="1.6" fill="#0a0d12" />
+          <circle cx="32" cy="44" r="0.7" fill="#5eead4" />
+        </svg>
+        <div class="brand-text">
+          <p class="en">Rune Abyss</p>
+          <p class="zh">符 文 深 渊</p>
+        </div>
+      </div>
+
+      <div class="badge"><span class="badge-dot" aria-hidden="true"></span>BSC · Chain ID 56 · 公平发射</div>
+
+      <p class="hero-copy">
+        零通胀链游 · 3 角色组队 · 每日挑战副本产出材料 · 纯 USDT 内盘流通 · 纯材料合成稀有冒险者。代币 <span class="gold">$REBC</span>，总量 10 亿，公平发射。
+      </p>
+
+      <div class="main">
+        <div class="dungeon-banner">
+          <div class="cap"><span>副本远征 · 官网实机美术</span><span>Lv.6</span></div>
+          <div class="thumb"><span>深渊王座</span></div>
+        </div>
+
+        <div>
+          <p class="loop-label">Core Loop</p>
+          <p class="loop-title">六大模块构成的零通胀闭环</p>
+          <div class="features">
+            <div class="feat">
+              <div class="feat-ic"><svg viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg></div>
+              <h3>符文召唤</h3>
+              <p>初始 50,000 $REBC 抽角色，每 1000 个 +10%，全服上限 6,000。</p>
+              <span class="more">了解更多 →</span>
+            </div>
+            <div class="feat">
+              <div class="feat-ic"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+              <h3>队伍编成</h3>
+              <p>3 角色组队，单账号最多 8 队，每队独立 24h 冷却。</p>
+              <span class="more">了解更多 →</span>
+            </div>
+            <div class="feat">
+              <div class="feat-ic"><svg viewBox="0 0 24 24"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg></div>
+              <h3>副本远征</h3>
+              <p>1 点体力挑战 6 级副本，按战力门槛产出 AE / BF / MR / ES。</p>
+              <span class="more">了解更多 →</span>
+            </div>
+            <div class="feat">
+              <div class="feat-ic"><svg viewBox="0 0 24 24"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20H2v2h20v-2h-2.72l-5.069-9.577A2 2 0 0 1 14 9.527V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/></svg></div>
+              <h3>符文合成</h3>
+              <p>100% 成功率，材料 + $REBC 进入黑洞，铸造更稀有的冒险者。</p>
+              <span class="more">了解更多 →</span>
+            </div>
+            <div class="feat">
+              <div class="feat-ic"><svg viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+              <h3>内盘交易</h3>
+              <p>USDT 挂卖，支持部分购买，统一 5% 手续费。</p>
+              <span class="more">了解更多 →</span>
+            </div>
+            <div class="feat">
+              <div class="feat-ic"><svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M8 7h6"/><path d="M8 11h8"/></svg></div>
+              <h3>推荐系统</h3>
+              <p>自助绑定，直推 10% / 间推 5%。</p>
+              <span class="more">了解更多 →</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="economy">
+          <div class="economy-text">
+            <p class="lbl">Economy</p>
+            <h3>零通胀 · 通缩 · 内盘流通</h3>
+            <p>材料只能通过副本掉落，不可铸造；合成消耗的材料与代币 100% 进入黑洞地址，玩家以 USDT 为媒介在内盘自由交易。</p>
+            <div class="eco-stats">
+              <div><div class="k">通胀</div><div class="v">0</div><div class="s">材料无增发</div></div>
+              <div><div class="k">销毁</div><div class="v">100%</div><div class="s">合成入黑洞</div></div>
+              <div><div class="k">手续费</div><div class="v">5%</div><div class="s">内盘交易</div></div>
+            </div>
+          </div>
+          <div class="sigil-card">
+            <img class="bg" src="/rune-sigil.png" alt="" />
+            <div class="lay" aria-hidden="true"></div>
+            <div class="inner">
+              <div>
+                <div class="advent">$REBC</div>
+                <div class="sub">公平发射 · 总量 1,000,000,000</div>
+              </div>
+              <div class="pill-btn">进入游戏</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai">
+          <div class="ai-inner">
+            <h4>APP LAYER · 符文妹妹</h4>
+            <p>与官网一致的应用层 AI：引导召唤、副本、合成与市场操作，解释链上风险；<strong>不托管资产</strong>，<strong>不代替钱包签名</strong>。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p class="cta">RUNEAS.XYZ</p>
+      <p class="x">https://x.com/RuneAbyssAI · @RuneAbyssAI</p>
+      <div class="eco" aria-hidden="true">
+        <img src="/ecosystem/metamask.svg" alt="" />
+        <img src="/ecosystem/walletconnect.svg" alt="" />
+        <img src="/ecosystem/trustwallet.svg" alt="" />
+        <img src="/ecosystem/bnbchain.svg" alt="" />
+        <img src="/ecosystem/coingecko.svg" alt="" />
+        <img src="/ecosystem/coinmarketcap.svg" alt="" />
+      </div>
+      <p class="dis">以下为常用第三方工具图标，便于识别生态；不代表合作背书。不构成投资建议。</p>
+    </footer>
+  </div>
+</body>
+</html>

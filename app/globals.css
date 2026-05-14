@@ -1,0 +1,680 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Rune Abyss — dark fantasy theme
+ * Palette (3 neutrals + 2 accents):
+ *   bg / card / muted    — obsidian slate (neutral)
+ *   primary              — rune gold (amber)
+ *   accent               — abyss cyan (teal)
+ *   destructive          — ember red (used sparingly)
+ */
+:root {
+  --background: oklch(0.14 0.012 240);
+  --foreground: oklch(0.96 0.012 85);
+
+  --card: oklch(0.18 0.014 240);
+  --card-foreground: oklch(0.96 0.012 85);
+
+  --popover: oklch(0.18 0.014 240);
+  --popover-foreground: oklch(0.96 0.012 85);
+
+  --primary: oklch(0.8 0.15 80);
+  --primary-foreground: oklch(0.18 0.014 240);
+
+  --secondary: oklch(0.24 0.014 240);
+  --secondary-foreground: oklch(0.96 0.012 85);
+
+  --muted: oklch(0.22 0.014 240);
+  --muted-foreground: oklch(0.7 0.02 240);
+
+  --accent: oklch(0.72 0.13 195);
+  --accent-foreground: oklch(0.14 0.012 240);
+
+  --destructive: oklch(0.62 0.22 25);
+  --destructive-foreground: oklch(0.98 0.01 80);
+
+  --border: oklch(0.28 0.015 240);
+  --input: oklch(0.24 0.014 240);
+  --ring: oklch(0.8 0.15 80);
+
+  /* Rarity colors used for badges only */
+  --chart-1: oklch(0.7 0.02 240);     /* 见习 — slate */
+  --chart-2: oklch(0.72 0.13 195);    /* 熟练 — cyan */
+  --chart-3: oklch(0.7 0.13 230);     /* 精英 — blue */
+  --chart-4: oklch(0.8 0.15 80);      /* 英雄 — gold */
+  --chart-5: oklch(0.7 0.18 35);      /* 传奇 — ember */
+
+  --radius: 0.625rem;
+
+  --sidebar: oklch(0.16 0.013 240);
+  --sidebar-foreground: oklch(0.96 0.012 85);
+  --sidebar-primary: oklch(0.8 0.15 80);
+  --sidebar-primary-foreground: oklch(0.14 0.012 240);
+  --sidebar-accent: oklch(0.22 0.014 240);
+  --sidebar-accent-foreground: oklch(0.96 0.012 85);
+  --sidebar-border: oklch(0.26 0.015 240);
+  --sidebar-ring: oklch(0.8 0.15 80);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist), 'Geist Fallback', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-cinzel), 'Cinzel Fallback', serif;
+  --font-mono: var(--font-geist-mono), 'Geist Mono Fallback', ui-monospace, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply text-foreground;
+    background-color: transparent;
+  }
+  /* html 保留实色作为图片加载前的回退背景 */
+  html {
+    background-color: var(--background);
+  }
+}
+
+@layer utilities {
+  .text-glow-gold {
+    text-shadow: 0 0 18px oklch(0.8 0.15 80 / 0.5), 0 0 4px oklch(0.8 0.15 80 / 0.6);
+  }
+  .text-glow-cyan {
+    text-shadow: 0 0 16px oklch(0.72 0.13 195 / 0.55);
+  }
+  .ring-rune {
+    box-shadow:
+      0 0 0 1px oklch(0.8 0.15 80 / 0.35),
+      0 0 24px oklch(0.8 0.15 80 / 0.18) inset;
+  }
+}
+
+@keyframes rune-spin {
+  from {
+    transform: rotate(0deg) translateZ(0);
+  }
+  to {
+    transform: rotate(360deg) translateZ(0);
+  }
+}
+
+/* ─── Battle (副本挑战) animations ───────────────────────────── */
+
+@keyframes battle-shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  10% {
+    transform: translate3d(-8px, -4px, 0);
+  }
+  30% {
+    transform: translate3d(7px, 3px, 0);
+  }
+  50% {
+    transform: translate3d(-5px, 5px, 0);
+  }
+  70% {
+    transform: translate3d(4px, -3px, 0);
+  }
+  90% {
+    transform: translate3d(-2px, 2px, 0);
+  }
+}
+
+@keyframes hero-charge {
+  0% {
+    transform: translate(0, 0) scale(1);
+    filter: brightness(1);
+  }
+  35% {
+    transform: translate(40%, -8%) scale(1.06);
+    filter: brightness(1.4) drop-shadow(0 0 12px oklch(0.8 0.15 80 / 0.8));
+  }
+  65% {
+    transform: translate(35%, -5%) scale(1.04);
+    filter: brightness(1.3);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    filter: brightness(1);
+  }
+}
+
+@keyframes boss-recoil {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    filter: brightness(1) saturate(1);
+  }
+  20% {
+    transform: translate(18px, -4px) rotate(2deg);
+    filter: brightness(1.9) saturate(1.4) hue-rotate(-25deg);
+  }
+  40% {
+    transform: translate(8px, 2px) rotate(-1deg);
+    filter: brightness(1.4) saturate(1.2) hue-rotate(-12deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+@keyframes boss-defeat {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+    filter: brightness(1) saturate(1);
+  }
+  15% {
+    transform: translate(35px, -12px) rotate(8deg) scale(1.04);
+    filter: brightness(2.4) saturate(0.6);
+  }
+  35% {
+    transform: translate(45px, 0) rotate(20deg) scale(1.02);
+    opacity: 0.95;
+    filter: brightness(1.6) saturate(0.4);
+  }
+  70% {
+    transform: translate(60px, 50px) rotate(55deg) scale(0.95);
+    opacity: 0.45;
+    filter: brightness(0.8) saturate(0.2) blur(1px);
+  }
+  100% {
+    transform: translate(80px, 110px) rotate(85deg) scale(0.85);
+    opacity: 0;
+    filter: brightness(0.5) saturate(0) blur(3px);
+  }
+}
+
+/* 失败：BOSS 反扑后稳稳立住，亮起血红光环 */
+@keyframes boss-roar {
+  0% {
+    transform: translate(0, 0) scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  30% {
+    transform: translate(-8px, -4px) scale(1.08);
+    filter: brightness(1.6) saturate(1.4) drop-shadow(0 0 18px oklch(0.7 0.18 35 / 0.9));
+  }
+  60% {
+    transform: translate(4px, 2px) scale(1.04);
+    filter: brightness(1.3) saturate(1.2) drop-shadow(0 0 12px oklch(0.7 0.18 35 / 0.7));
+  }
+  100% {
+    transform: translate(0, 0) scale(1.02);
+    filter: brightness(1.1) saturate(1.1) drop-shadow(0 0 8px oklch(0.7 0.18 35 / 0.5));
+  }
+}
+
+/* 失败：队员被反击击倒（倾倒 + 暗化 + 飘血） */
+@keyframes hero-defeat {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+    filter: brightness(1) saturate(1);
+  }
+  20% {
+    transform: translate(-12px, -6px) rotate(-6deg) scale(0.98);
+    filter: brightness(1.3) saturate(0.8);
+  }
+  55% {
+    transform: translate(-18px, 22px) rotate(-32deg) scale(0.92);
+    opacity: 0.85;
+    filter: brightness(0.7) saturate(0.4) blur(0.5px);
+  }
+  100% {
+    transform: translate(-22px, 48px) rotate(-58deg) scale(0.86);
+    opacity: 0.4;
+    filter: brightness(0.4) saturate(0.15) blur(1.5px);
+  }
+}
+
+@keyframes slash-sweep {
+  0% {
+    transform: translate(-30%, 30%) rotate(-30deg) scaleX(0.4);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  60% {
+    transform: translate(30%, -30%) rotate(-30deg) scaleX(1.6);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(50%, -50%) rotate(-30deg) scaleX(2);
+    opacity: 0;
+  }
+}
+
+@keyframes dmg-float {
+  0% {
+    transform: translate(-50%, 0) scale(0.4);
+    opacity: 0;
+  }
+  20% {
+    transform: translate(-50%, -10px) scale(1.45);
+    opacity: 1;
+  }
+  60% {
+    transform: translate(-50%, -55px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -95px) scale(0.85);
+    opacity: 0;
+  }
+}
+
+@keyframes crit-flash {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes crit-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 0;
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.4);
+    opacity: 0;
+  }
+}
+
+@keyframes victory-pop {
+  0% {
+    transform: translate(-50%, -50%) scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(-50%, -50%) scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes loot-rise {
+  0% {
+    transform: translateY(20px) scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes hp-drain {
+  from {
+    filter: brightness(1.4);
+  }
+  to {
+    filter: brightness(1);
+  }
+}
+
+@keyframes embers-rise {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-160px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* ─── Summon (召唤) animations ───────────────────────────────── */
+
+@keyframes summon-charge {
+  0% {
+    transform: scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.1) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 0.8;
+  }
+}
+
+@keyframes summon-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(8);
+    opacity: 0;
+  }
+}
+
+@keyframes slot-shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(-3px, 1px, 0);
+  }
+  50% {
+    transform: translate3d(2px, -2px, 0);
+  }
+  75% {
+    transform: translate3d(-2px, 2px, 0);
+  }
+}
+
+@keyframes card-flip-in {
+  0% {
+    transform: rotateY(180deg) translateY(40px) scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: rotateY(0deg) translateY(0) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateY(0deg) translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes legend-aura {
+  0% {
+    box-shadow: 0 0 0 0 oklch(0.7 0.18 35 / 0.7);
+  }
+  100% {
+    box-shadow: 0 0 60px 18px oklch(0.7 0.18 35 / 0);
+  }
+}
+
+@keyframes light-pillar {
+  0% {
+    transform: scaleY(0) translateX(-50%);
+    opacity: 0;
+  }
+  40% {
+    transform: scaleY(1.1) translateX(-50%);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scaleY(1) translateX(-50%);
+    opacity: 0.55;
+  }
+}
+
+/* ─── Team formation (组队) animations ───────────────────────── */
+
+@keyframes hero-fly-left {
+  0% {
+    transform: translate(-220px, 60px) scale(0.6) rotate(-12deg);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(8px, -8px) scale(1.05) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes hero-fly-right {
+  0% {
+    transform: translate(220px, 60px) scale(0.6) rotate(12deg);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(-8px, -8px) scale(1.05) rotate(-2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes hero-fly-up {
+  0% {
+    transform: translate(0, 200px) scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: translate(0, -10px) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pact-seal {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(-90deg);
+    opacity: 0;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1.18) rotate(8deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes banner-drop {
+  0% {
+    transform: translate(-50%, -120px);
+    opacity: 0;
+  }
+  70% {
+    transform: translate(-50%, 12px);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+/* ─── Synthesis (合成) animations ────────────────────────────── */
+
+@keyframes mat-tl {
+  0% {
+    transform: translate(-180px, -120px) scale(0.5) rotate(-25deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+@keyframes mat-tr {
+  0% {
+    transform: translate(180px, -120px) scale(0.5) rotate(25deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+@keyframes mat-bl {
+  0% {
+    transform: translate(-180px, 120px) scale(0.5) rotate(25deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+@keyframes mat-br {
+  0% {
+    transform: translate(180px, 120px) scale(0.5) rotate(-25deg);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+@keyframes forge-boil {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1) hue-rotate(0deg);
+  }
+  50% {
+    transform: scale(1.08) rotate(180deg);
+    filter: brightness(1.6) hue-rotate(-15deg);
+  }
+}
+
+@keyframes orb-grow {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes orb-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    filter: brightness(1);
+  }
+  40% {
+    transform: translate(-50%, -50%) scale(1.6);
+    opacity: 1;
+    filter: brightness(2.4);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(3.2);
+    opacity: 0;
+    filter: brightness(3);
+  }
+}
+
+@keyframes hero-emerge {
+  0% {
+    transform: translateY(60px) scale(0.6);
+    opacity: 0;
+    filter: brightness(2.5) blur(8px);
+  }
+  60% {
+    transform: translateY(-6px) scale(1.04);
+    opacity: 1;
+    filter: brightness(1.4) blur(0);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    filter: brightness(1);
+  }
+}
+
+@keyframes flame-flicker {
+  0%,
+  100% {
+    transform: scaleY(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scaleY(1.25);
+    opacity: 1;
+  }
+}
