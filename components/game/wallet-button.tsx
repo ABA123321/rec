@@ -8,7 +8,6 @@ import { LogOut, Loader2, Wallet } from "lucide-react"
 import { useGame } from "@/components/providers/game-provider"
 import { useLocale } from "@/components/providers/locale-provider"
 import { interpolate } from "@/lib/i18n/interpolate"
-import { RuneAbyssLogo } from "@/components/brand/rune-abyss-logo"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -206,7 +205,7 @@ export function WalletButton({ size = "default" }: { size?: "default" | "sm" | "
         <DropdownMenuSeparator />
 
         <DropdownMenuItem disabled className="flex justify-between">
-          <span className="text-muted-foreground">$REBC</span>
+          <span className="text-muted-foreground">$草根社</span>
           <span className="font-mono text-foreground">{advent.toLocaleString()}</span>
         </DropdownMenuItem>
         <DropdownMenuItem disabled className="flex justify-between">

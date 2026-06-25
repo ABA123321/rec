@@ -17,7 +17,7 @@ import {
   type AppLocale,
   isAppLocale,
 } from "@/lib/i18n/config"
-import { getMessages } from "@/lib/i18n/dictionaries/registry"
+import { getMessages, loadMessages } from "@/lib/i18n/dictionaries/registry"
 import type { Messages } from "@/lib/i18n/dictionaries/zh"
 
 type LocaleContextValue = {
@@ -39,6 +39,7 @@ function readCookieLocale(): AppLocale | null {
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<AppLocale>(DEFAULT_LOCALE)
+  const [messages, setMessages] = useState<Messages>(() => getMessages(DEFAULT_LOCALE))
 
   useEffect(() => {
     const fromCookie = readCookieLocale()
@@ -49,13 +50,21 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = HTML_LANG[locale]
   }, [locale])
 
+  useEffect(() => {
+    let cancelled = false
+    void loadMessages(locale).then((next) => {
+      if (!cancelled) setMessages(next)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [locale])
+
   const setLocale = useCallback((next: AppLocale) => {
     setLocaleState(next)
     document.cookie = `${LOCALE_COOKIE}=${encodeURIComponent(next)};path=/;max-age=31536000;SameSite=Lax`
     document.documentElement.lang = HTML_LANG[next]
   }, [])
-
-  const messages = useMemo(() => getMessages(locale), [locale])
 
   const value = useMemo(
     () => ({ locale, setLocale, messages }),

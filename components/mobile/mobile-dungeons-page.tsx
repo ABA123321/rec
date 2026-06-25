@@ -16,6 +16,8 @@ import {
 import { cn } from "@/lib/utils"
 import { MaterialIcon } from "@/components/game/material-icon"
 import { BattleModal } from "@/components/game/battle-modal"
+import { ClassAffinityBadge } from "@/components/game/class-affinity-badge"
+import { ExpeditionChainSection } from "@/components/game/expedition-chain-section"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -40,7 +42,7 @@ import { useGame } from "@/components/providers/game-provider"
 import { useLocale } from "@/components/providers/locale-provider"
 import { interpolate } from "@/lib/i18n/interpolate"
 import { mergeLocalizedDungeon } from "@/lib/i18n/game-display"
-import { DUNGEONS, ENERGY_PRICE_USDT, MATERIAL_KEYS } from "@/lib/game-data"
+import { DUNGEONS, DUNGEON_SPECIALIST, ENERGY_PRICE_USDT, MATERIAL_KEYS } from "@/lib/game-data"
 import { MobilePageHeader } from "./mobile-shell"
 
 export function MobileDungeonsPage() {
@@ -189,6 +191,8 @@ export function MobileDungeonsPage() {
               </CardContent>
             </Card>
 
+            <ExpeditionChainSection />
+
             {/* Dungeon list - vertical stack on mobile */}
             <section>
               <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
@@ -196,6 +200,9 @@ export function MobileDungeonsPage() {
               </p>
               <h2 className="font-serif text-xl">{dun.sixTiers}</h2>
               <p className="mt-0.5 text-xs text-muted-foreground">{dun.rulesMobile}</p>
+              <p className="mt-2 rounded-lg border border-chart-5/30 bg-chart-5/5 px-3 py-2 text-[11px] text-muted-foreground">
+                {dun.d6Warning}
+              </p>
 
               <ul className="mt-3 flex flex-col gap-3">
                 {DUNGEONS.map((d) => {
@@ -221,12 +228,21 @@ export function MobileDungeonsPage() {
                             <p className="rounded-md border border-primary/40 bg-background/70 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-primary backdrop-blur">
                               D{d.level}
                             </p>
-                            <Badge
-                              variant={eligible ? "default" : "secondary"}
-                              className="font-mono text-[10px] backdrop-blur"
-                            >
-                              {interpolate(s.powerGte, { n: String(d.minPower) })}
-                            </Badge>
+                            <div className="flex flex-col items-end gap-1">
+                              <Badge variant="outline" className="font-mono text-[9px] backdrop-blur">
+                                {DUNGEON_SPECIALIST[d.level] === "HIGH_AB"
+                                  ? "AE/BF"
+                                  : DUNGEON_SPECIALIST[d.level] === "MIXED"
+                                    ? "混合"
+                                    : `${DUNGEON_SPECIALIST[d.level]} 专产`}
+                              </Badge>
+                              <Badge
+                                variant={eligible ? "default" : "secondary"}
+                                className="font-mono text-[10px] backdrop-blur"
+                              >
+                                {interpolate(s.powerGte, { n: String(d.minPower) })}
+                              </Badge>
+                            </div>
                           </div>
                           <div className="absolute inset-x-0 bottom-0 p-3">
                             <h3 className="font-serif text-lg leading-tight text-foreground drop-shadow-lg">
@@ -335,13 +351,18 @@ export function MobileDungeonsPage() {
             </Empty>
           ) : (
             <ul className="flex flex-col gap-2">
-              {eligibleTeams.map((team) => (
+              {eligibleTeams.map((team) => {
+                const members = team.characterIds
+                  .map((id) => charById.get(id))
+                  .filter(Boolean) as typeof characters
+                return (
                 <li key={team.id}>
                   <button
                     type="button"
                     onClick={() => handleChallenge(team.id)}
-                    className="flex w-full items-center justify-between rounded-lg border border-border bg-background/40 p-3 text-left transition hover:border-primary/40 hover:bg-card"
+                    className="flex w-full flex-col gap-2 rounded-lg border border-border bg-background/40 p-3 text-left transition hover:border-primary/40 hover:bg-card"
                   >
+                    <div className="flex w-full items-center justify-between">
                     <div className="min-w-0">
                       <div className="font-serif text-sm truncate">
                         {team.name}
@@ -358,9 +379,14 @@ export function MobileDungeonsPage() {
                         {teamPower(team.id)}
                       </div>
                     </div>
+                    </div>
+                    {targetDungeon ? (
+                      <ClassAffinityBadge members={members} dungeonLevel={targetDungeon.level} />
+                    ) : null}
                   </button>
                 </li>
-              ))}
+                )
+              })}
             </ul>
           )}
         </DialogContent>

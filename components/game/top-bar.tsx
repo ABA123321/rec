@@ -6,7 +6,7 @@ import { useGame } from "@/components/providers/game-provider"
 import { useLocale } from "@/components/providers/locale-provider"
 import { WalletButton } from "@/components/game/wallet-button"
 import { Separator } from "@/components/ui/separator"
-import { RuneAbyssLogo } from "@/components/brand/rune-abyss-logo"
+import { GrassrootsTokenIcon } from "@/components/brand/grassroots-token-icon"
 import { UsdtIcon } from "@/components/brand/usdt-icon"
 
 export function TopBar({ title, description }: { title: string; description?: string }) {
@@ -30,9 +30,9 @@ export function TopBar({ title, description }: { title: string; description?: st
         {connected ? (
           <div className="hidden items-center gap-3 rounded-lg border border-border bg-card/60 px-3 py-1.5 lg:flex">
             <div className="flex items-center gap-1.5 text-sm">
-              <RuneAbyssLogo size={14} title={null} />
+              <GrassrootsTokenIcon size={14} title={null} />
               <span className="font-mono">{advent.toLocaleString()}</span>
-              <span className="text-muted-foreground text-xs">ADVENT</span>
+              <span className="text-muted-foreground text-xs">草根社</span>
             </div>
             <Separator orientation="vertical" className="h-4" />
             <div className="flex items-center gap-1.5 text-sm">

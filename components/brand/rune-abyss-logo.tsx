@@ -14,11 +14,11 @@ type Props = React.SVGProps<SVGSVGElement> & {
 }
 
 /**
- * Rune Abyss · $REBC — unified brand & token mark.
+ * Rune Abyss — website brand mark (header, lockup, favicon).
  *
  * A circular gold medallion with four cardinal rune ticks, a runic "A" engraved
- * inside, and a cyan abyss-glow inner ring. Used both as the website logo and
- * as the $REBC token icon for visual consistency.
+ * inside, and a cyan abyss-glow inner ring. For $草根社 token amounts and costs,
+ * use GrassrootsTokenIcon instead.
  *
  * Important: gradient `id`s are generated per-instance with React.useId() so
  * that multiple logos on the same page never clash. A solid-gold underlay

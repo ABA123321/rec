@@ -6,7 +6,7 @@ import { Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useGame } from "@/components/providers/game-provider"
 import { useLocale } from "@/components/providers/locale-provider"
-import { RuneAbyssLogo } from "@/components/brand/rune-abyss-logo"
+import { GrassrootsTokenIcon } from "@/components/brand/grassroots-token-icon"
 import { UsdtIcon } from "@/components/brand/usdt-icon"
 import { WalletButton } from "@/components/game/wallet-button"
 
@@ -52,8 +52,8 @@ export function MobilePageHeader({
       {connected ? (
         <div className="flex items-center gap-1.5 overflow-x-auto border-t border-border/50 px-4 py-1.5 scrollbar-none">
           <BalancePill
-            icon={<RuneAbyssLogo size={11} title={null} />}
-            label="ADVENT"
+            icon={<GrassrootsTokenIcon size={11} title={null} />}
+            label="草根社"
             value={advent.toLocaleString()}
           />
           <BalancePill

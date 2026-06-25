@@ -8,13 +8,14 @@ import {
   Plus,
   Sparkles,
   Sword,
-  Trash2,
   Users,
 } from "lucide-react"
 
 import { TopBar } from "@/components/game/top-bar"
 import { CharacterCard } from "@/components/game/character-card"
 import { TeamFormationModal } from "@/components/game/team-formation-modal"
+import { TeamSlotCell } from "@/components/game/team-replace-dialog"
+import { TeamUnbindMenuButton } from "@/components/game/team-unbind-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -40,7 +41,7 @@ import { interpolate } from "@/lib/i18n/interpolate"
 import { MAX_TEAMS_PER_ACCOUNT } from "@/lib/game-data"
 
 export function DesktopTeamsPage() {
-  const { characters, teams, createTeam, disbandTeam, connected, connect } = useGame()
+  const { characters, teams, createTeam, connected, connect } = useGame()
   const { messages: loc } = useLocale()
   const t = loc.game.teams
   const s = loc.game.shared
@@ -65,7 +66,7 @@ export function DesktopTeamsPage() {
   const [availablePage, setAvailablePage] = React.useState(0)
   const [teamsPage, setTeamsPage] = React.useState(0)
 
-  // 当总数变化（召唤新角色 / 解散队伍）时把页码 clamp 回有效范围，避免出现空白页
+  // 当总数变化（召唤新角色 / 解绑队员）时把页码 clamp 回有效范围，避免出现空白页
   const rosterTotalPages = Math.max(1, Math.ceil(characters.length / ROSTER_PAGE))
   const availableTotalPages = Math.max(1, Math.ceil(available.length / AVAILABLE_PAGE))
   const teamsTotalPages = Math.max(1, Math.ceil(teams.length / TEAMS_PAGE))
@@ -184,10 +185,11 @@ export function DesktopTeamsPage() {
               <>
                 <ul className="grid gap-4 lg:grid-cols-2">
                   {teamsPaged.map((team) => {
-                    const members = team.characterIds
-                      .map((id) => charById.get(id))
-                      .filter(Boolean) as Character[]
-                    const power = members.reduce((s, c) => s + c.power, 0)
+                    const power = team.characterIds.reduce((sum, id) => {
+                      const c = id !== "0" ? charById.get(id) : undefined
+                      return sum + (c?.power ?? 0)
+                    }, 0)
+                    const isFull = team.characterIds.every((id) => id !== "0")
                     const cooling = team.cooldownUntil > Date.now()
                     const remaining = cooling
                       ? Math.ceil((team.cooldownUntil - Date.now()) / 60_000)
@@ -211,8 +213,14 @@ export function DesktopTeamsPage() {
                             </div>
 
                             <div className="mt-4 grid grid-cols-3 gap-2">
-                              {members.map((member) => (
-                                <CharacterCard key={member.id} character={member} size="sm" />
+                              {team.characterIds.map((_, slotIndex) => (
+                                <TeamSlotCell
+                                  key={slotIndex}
+                                  teamId={team.id}
+                                  slotIndex={slotIndex}
+                                  characterIds={team.characterIds}
+                                  charactersById={charById}
+                                />
                               ))}
                             </div>
 
@@ -236,24 +244,22 @@ export function DesktopTeamsPage() {
                                 <Button
                                   asChild
                                   size="sm"
-                                  disabled={cooling}
-                                  variant={cooling ? "outline" : "default"}
+                                  disabled={cooling || !isFull}
+                                  variant={cooling || !isFull ? "outline" : "default"}
                                   className="gap-1"
+                                  title={!isFull ? t.teamIncomplete : undefined}
                                 >
                                   <Link href="/game/dungeons">
                                     <Sword className="size-3.5" aria-hidden />
                                     {t.dispatch}
                                   </Link>
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
+                                <TeamUnbindMenuButton
+                                  teamId={team.id}
+                                  characterIds={team.characterIds}
+                                  charactersById={charById}
                                   className="gap-1 text-destructive hover:text-destructive"
-                                  onClick={() => disbandTeam(team.id)}
-                                >
-                                  <Trash2 className="size-3.5" aria-hidden />
-                                  {t.disband}
-                                </Button>
+                                />
                               </div>
                             </div>
                           </CardContent>

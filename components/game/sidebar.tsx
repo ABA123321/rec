@@ -16,6 +16,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { useGame } from "@/components/providers/game-provider"
+import { GrassrootsTokenIcon } from "@/components/brand/grassroots-token-icon"
 import { RuneAbyssLogo } from "@/components/brand/rune-abyss-logo"
 import { UsdtIcon } from "@/components/brand/usdt-icon"
 import { LocaleSwitcher } from "@/components/locale/locale-switcher"
@@ -118,8 +119,8 @@ export function GameSidebar() {
         <ul className="flex flex-col gap-2 text-sm">
           <li className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-2 text-muted-foreground">
-              <RuneAbyssLogo size={14} title={null} />
-              $REBC
+              <GrassrootsTokenIcon size={14} title={null} />
+              $草根社
             </span>
             <span className="font-mono">{advent.toLocaleString()}</span>
           </li>

@@ -7,7 +7,6 @@ import {
   ArrowRight,
   Bot,
   BookOpen,
-  Coins,
   Download,
   ExternalLink,
   HelpCircle,
@@ -15,6 +14,7 @@ import {
   Wallet,
 } from "lucide-react"
 
+import { GrassrootsTokenIcon } from "@/components/brand/grassroots-token-icon"
 import { RuneAbyssLogo } from "@/components/brand/rune-abyss-logo"
 import { LocaleSwitcher } from "@/components/locale/locale-switcher"
 import { useLocale } from "@/components/providers/locale-provider"
@@ -26,12 +26,13 @@ import {
   MARKET_FEE,
   REFERRAL_DIRECT,
   REFERRAL_INDIRECT,
-  SUMMON_BASE_COST,
+  SUMMON_BASE_USDT,
+  SUMMON_TIER_SIZE,
   TOTAL_CHAR_CAP,
 } from "@/lib/game-data"
 import type { AppLocale } from "@/lib/i18n/config"
 import { interpolate } from "@/lib/i18n/interpolate"
-import { CHAIN_ID, CONTRACTS, explorer } from "@/lib/web3/contracts"
+import { CHAIN_ID, CONTRACTS, explorer, FLAP_FAIR_LAUNCH_URL } from "@/lib/web3/contracts"
 
 /** 与 `npm run pdf:whitepaper:public` + `npm run pdf:marketing:public` 输出到 `public/downloads/` 一致 */
 const PDF_HREFS_ZH = [
@@ -56,10 +57,11 @@ const CONTRACT_ADDRESS_ROWS: {
   label: string
 }[] = [
   { key: "Game", label: "Game" },
+  { key: "GameProgress", label: "GameProgress" },
   { key: "CharacterNFT", label: "Character NFT" },
   { key: "Materials", label: "Materials" },
   { key: "Marketplace", label: "Marketplace" },
-  { key: "AdventToken", label: "AdventToken ($REBC)" },
+  { key: "AdventToken", label: "AdventToken ($草根社)" },
   { key: "USDT", label: "USDT" },
   { key: "Stamina", label: "Stamina" },
   { key: "ReferralRegistry", label: "ReferralRegistry" },
@@ -94,6 +96,7 @@ export function UserGuideView() {
     { href: "#intro", label: d.toc.intro },
     { href: "#downloads", label: d.toc.downloads },
     { href: "#highlights", label: d.toc.highlights },
+    { href: "#v48", label: d.toc.v48 },
     { href: "#tokens", label: d.toc.tokens },
     { href: "#prepare", label: d.toc.prepare },
     { href: "#guide", label: d.toc.guide },
@@ -143,7 +146,7 @@ export function UserGuideView() {
             <div className="flex flex-wrap items-center gap-2">
               <LocaleSwitcher />
               <Button asChild size="sm" variant="outline" className="gap-1.5">
-                <a href="https://flap.sh/" target="_blank" rel="noopener noreferrer">
+                <a href={FLAP_FAIR_LAUNCH_URL} target="_blank" rel="noopener noreferrer">
                   Flap
                   <ExternalLink className="size-3.5 opacity-70" aria-hidden />
                 </a>
@@ -209,7 +212,7 @@ export function UserGuideView() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="gap-2">
-              <a href="https://flap.sh/" target="_blank" rel="noopener noreferrer">
+              <a href={FLAP_FAIR_LAUNCH_URL} target="_blank" rel="noopener noreferrer">
                 {d.flapFairLaunch}
                 <ExternalLink className="size-4 opacity-70" aria-hidden />
               </a>
@@ -283,14 +286,67 @@ export function UserGuideView() {
           <p className="text-center text-xs text-muted-foreground">
             {d.highlights.flapLine}{" "}
             <a
-              href="https://flap.sh/"
+              href={FLAP_FAIR_LAUNCH_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary underline-offset-4 hover:underline"
             >
-              https://flap.sh/
+              {FLAP_FAIR_LAUNCH_URL}
             </a>
           </p>
+        </section>
+
+        <section id="v48" className="scroll-mt-28 space-y-6">
+          <SectionTitle eyebrow={d.v48.eyebrow} title={d.v48.title} />
+          <p className="text-sm leading-relaxed text-muted-foreground">{d.v48.lead}</p>
+          <Card className="border-border bg-card/40 overflow-x-auto">
+            <CardContent className="p-0">
+              <table className="w-full min-w-[36rem] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+                    <th className="px-4 py-3 font-medium">{d.v48.tableHeaders.level}</th>
+                    <th className="px-4 py-3 font-medium">{d.v48.tableHeaders.power}</th>
+                    <th className="px-4 py-3 font-medium">{d.v48.tableHeaders.role}</th>
+                    <th className="px-4 py-3 font-medium">{d.v48.tableHeaders.ae}</th>
+                    <th className="px-4 py-3 font-medium">{d.v48.tableHeaders.bf}</th>
+                    <th className="px-4 py-3 font-medium">{d.v48.tableHeaders.mr}</th>
+                    <th className="px-4 py-3 font-medium">{d.v48.tableHeaders.es}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border text-muted-foreground">
+                  {d.v48.dungeons.map((row) => (
+                    <tr key={row.level} className="hover:bg-muted/30">
+                      <td className="px-4 py-3 font-mono text-foreground">{row.level}</td>
+                      <td className="px-4 py-3">{row.power}</td>
+                      <td className="px-4 py-3 text-foreground">{row.role}</td>
+                      <td className="px-4 py-3">{row.ae}</td>
+                      <td className="px-4 py-3">{row.bf}</td>
+                      <td className="px-4 py-3">{row.mr}</td>
+                      <td className="px-4 py-3">{row.es}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+          <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+            {d.v48.dungeonNotes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+          <div>
+            <h3 className="font-serif text-lg text-foreground">{d.v48.featuresTitle}</h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {d.v48.features.map((f) => (
+                <Card key={f.title} className="border-border bg-card/35">
+                  <CardContent className="space-y-1 p-4">
+                    <div className="font-medium text-foreground">{f.title}</div>
+                    <p className="text-sm text-muted-foreground">{f.desc}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="space-y-6">
@@ -299,7 +355,7 @@ export function UserGuideView() {
             <Card className="border-border bg-card/40">
               <CardContent className="space-y-3 p-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2 font-serif text-lg text-foreground">
-                  <Coins className="size-5 text-primary" aria-hidden />
+                  <GrassrootsTokenIcon size={20} title={null} />
                   {d.tokens.adventTitle}
                 </div>
                 <ul className="list-inside list-disc space-y-2 leading-relaxed">
@@ -308,7 +364,7 @@ export function UserGuideView() {
                   <li>
                     {d.tokens.advent3a}
                     <a
-                      href="https://flap.sh/"
+                      href={FLAP_FAIR_LAUNCH_URL}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary underline-offset-4 hover:underline"
@@ -331,7 +387,8 @@ export function UserGuideView() {
                   <li>{d.tokens.wallet2}</li>
                   <li>
                     {interpolate(d.tokens.wallet3a, {
-                      summonBase: SUMMON_BASE_COST.toLocaleString(),
+                      summonUsdt: String(SUMMON_BASE_USDT),
+                      summonStep: SUMMON_TIER_SIZE.toLocaleString(),
                       cap: TOTAL_CHAR_CAP.toLocaleString(),
                     })}
                   </li>

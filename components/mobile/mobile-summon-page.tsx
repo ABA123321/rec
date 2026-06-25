@@ -3,19 +3,17 @@
 import * as React from "react"
 import Image from "next/image"
 import {
-  CheckCircle2,
-  Hourglass,
   KeyRound,
   Loader2,
   ShieldCheck,
   Sparkles,
-  X,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { RuneAbyssLogo } from "@/components/brand/rune-abyss-logo"
+import { GrassrootsTokenIcon } from "@/components/brand/grassroots-token-icon"
 import { RuneSigil } from "@/components/brand/rune-sigil"
 import { SummonAnimationModal } from "@/components/game/summon-animation-modal"
+import { SummonOpensCountdown } from "@/components/game/summon-opens-countdown"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Card, CardContent } from "@/components/ui/card"
@@ -89,25 +87,31 @@ export function MobileSummonPage() {
     globalSummoned,
     charCap,
     currentSummonCost,
+    drawOpensAt,
+    isSummonOpen,
     summon,
-    finalizeDraw,
-    cancelDraw,
-    pendingDraw,
-    currentBlock,
-    rngDelayBlocks,
     isTxPending,
     isAdventApproved,
     approveAdvent,
   } = useGame()
 
-  const { messages: m } = useLocale()
+  const { messages: m, locale } = useLocale()
   const g = m.game.summon
   const s = m.game.shared
+
+  const opensAtFormatted =
+    drawOpensAt > 0
+      ? new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : locale, {
+          dateStyle: "medium",
+          timeStyle: "short",
+          timeZone: "Asia/Shanghai",
+        }).format(drawOpensAt * 1000)
+      : ""
 
   const [count, setCount] = React.useState<number>(1)
   const [animOpen, setAnimOpen] = React.useState(false)
   const [animResult, setAnimResult] = React.useState<Character[] | null>(null)
-  const charsBeforeFinalizeRef = React.useRef<number | null>(null)
+  const charsBeforeSummonRef = React.useRef<number | null>(null)
 
   const total = currentSummonCost * count
   const canAfford = advent >= total
@@ -115,32 +119,14 @@ export function MobileSummonPage() {
   const nextTierIn = SUMMON_TIER_SIZE - (globalSummoned % SUMMON_TIER_SIZE)
   const capPhase = summonCapPhaseProgress(globalSummoned, charCap)
 
-  const hasPending = !!pendingDraw
-  const blocksRemaining = pendingDraw
-    ? Number(
-        pendingDraw.readyAtBlock > currentBlock
-          ? pendingDraw.readyAtBlock - currentBlock
-          : 0n,
-      )
-    : 0
-  const totalDelayBlocks = Number(rngDelayBlocks || 1n)
-  const waitProgress = pendingDraw
-    ? Math.min(
-        100,
-        ((totalDelayBlocks - blocksRemaining) / totalDelayBlocks) * 100,
-      )
-    : 0
-
   const handleSummon = async () => {
-    if (
-      !connected ||
-      !canAfford ||
-      hasPending ||
-      isTxPending ||
-      !isAdventApproved
-    )
-      return
-    await summon(count)
+    if (!connected || !canAfford || isTxPending || !isAdventApproved || !isSummonOpen) return
+    charsBeforeSummonRef.current = characters.length
+    const result = await summon(count)
+    if (result.ok) {
+      setAnimResult(null)
+      setAnimOpen(true)
+    }
   }
 
   const handleApprove = async () => {
@@ -148,19 +134,9 @@ export function MobileSummonPage() {
     await approveAdvent()
   }
 
-  const handleFinalize = async () => {
-    if (!pendingDraw?.ready || isTxPending) return
-    charsBeforeFinalizeRef.current = characters.length
-    const ok = await finalizeDraw()
-    if (ok) {
-      setAnimResult(null)
-      setAnimOpen(true)
-    }
-  }
-
   React.useEffect(() => {
     if (!animOpen || animResult) return
-    const before = charsBeforeFinalizeRef.current
+    const before = charsBeforeSummonRef.current
     if (before == null) return
     if (characters.length > before) {
       const fresh = characters.slice(before)
@@ -168,9 +144,6 @@ export function MobileSummonPage() {
     }
   }, [animOpen, animResult, characters])
 
-  const isExpired = !!pendingDraw?.expired
-  const isReady = !!pendingDraw?.ready && !isExpired
-  const isWaiting = hasPending && !isReady && !isExpired
   const needsApproval = connected && !isAdventApproved
 
   return (
@@ -188,17 +161,8 @@ export function MobileSummonPage() {
           <CardContent className="p-0">
             <div className="relative isolate overflow-hidden">
               <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-                <div
-                  className={cn(
-                    "absolute left-1/2 top-1/2 aspect-square w-[120%] -translate-x-1/2 -translate-y-1/2 transition duration-700",
-                    hasPending && "scale-110",
-                  )}
-                >
-                  <RuneSigil
-                    spin
-                    opacity={hasPending ? 0.8 : 0.5}
-                    className={cn("h-full w-full", isWaiting && "animate-pulse")}
-                  />
+                <div className="absolute left-1/2 top-1/2 aspect-square w-[120%] -translate-x-1/2 -translate-y-1/2">
+                  <RuneSigil spin opacity={0.5} className="h-full w-full" />
                 </div>
               </div>
 
@@ -238,7 +202,6 @@ export function MobileSummonPage() {
                         TONE_BORDER[r.tone],
                         TONE_GLOW[r.tone],
                         "max-w-[22%]",
-                        isWaiting && "animate-pulse",
                       )}
                       aria-label={interpolate(s.probAria, {
                         name: rv.name,
@@ -278,36 +241,30 @@ export function MobileSummonPage() {
               </div>
 
               <div
-                className={cn(
-                  "relative h-1 w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent transition-opacity",
-                  hasPending ? "opacity-100" : "opacity-50",
-                )}
+                className="relative h-1 w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent opacity-50"
                 aria-hidden
               />
             </div>
 
-            {/* 召唤面板 — commit-reveal 状态机 */}
             <div className="border-t border-border bg-background/60 px-4 py-4">
-              {hasPending ? (
-                <MobilePendingPanel
-                  summon={g}
-                  shared={s}
-                  count={pendingDraw!.count}
-                  isReady={isReady}
-                  isExpired={isExpired}
-                  blocksRemaining={blocksRemaining}
-                  totalDelay={totalDelayBlocks}
-                  waitProgress={waitProgress}
-                  isTxPending={isTxPending}
-                  onFinalize={handleFinalize}
-                  onCancel={cancelDraw}
-                />
-              ) : (
-                <MobileDefaultPanel
+              <SummonOpensCountdown
+                opensAtSec={drawOpensAt}
+                compact
+                labels={{
+                  title: g.drawOpensTitle,
+                  countdown: g.drawOpensCountdown,
+                  opensAtLabel: g.drawOpensAtLabel,
+                  opensAt: opensAtFormatted,
+                  unit: g.drawCountdownUnit,
+                }}
+                className="mb-4"
+              />
+              <MobileDefaultPanel
                   summon={g}
                   shared={s}
                   connected={connected}
                   canAfford={canAfford}
+                  isSummonOpen={isSummonOpen}
                   count={count}
                   total={total}
                   currentSummonCost={currentSummonCost}
@@ -316,8 +273,7 @@ export function MobileSummonPage() {
                   setCount={setCount}
                   onSummon={handleSummon}
                   onApprove={handleApprove}
-                />
-              )}
+              />
             </div>
           </CardContent>
         </Card>
@@ -344,12 +300,6 @@ export function MobileSummonPage() {
                 / {capPhase.phaseSize.toLocaleString()}
               </span>
             </div>
-            <p className="mt-1 text-[10px] text-muted-foreground">
-              {g.cumulative}{" "}
-              <span className="font-mono text-foreground/90">
-                {globalSummoned.toLocaleString()} / {charCap.toLocaleString()}
-              </span>
-            </p>
             <Progress value={capPhase.phasePct} className="mt-2 h-1.5" />
             <ul className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
               <li className="rounded-md border border-border/60 bg-background/50 p-2">
@@ -427,10 +377,7 @@ export function MobileSummonPage() {
         {/* 说明 */}
         <Card className="border-border bg-card/60">
           <CardContent className="p-4 text-xs leading-relaxed text-muted-foreground">
-            <p>
-              <span className="text-primary">commit–reveal</span> —{" "}
-              {interpolate(g.crExplainer, { blocks: String(totalDelayBlocks) })}
-            </p>
+            <p>召唤在单笔交易中即时完成，结果由链上伪随机数决定。</p>
           </CardContent>
         </Card>
       </main>
@@ -440,9 +387,9 @@ export function MobileSummonPage() {
         onClose={() => {
           setAnimOpen(false)
           setAnimResult(null)
-          charsBeforeFinalizeRef.current = null
+          charsBeforeSummonRef.current = null
         }}
-        pendingCount={animResult?.length ?? pendingDraw?.count ?? 1}
+        pendingCount={animResult?.length ?? count}
         newCharacters={animResult}
       />
     </>
@@ -454,6 +401,7 @@ function MobileDefaultPanel({
   shared: s,
   connected,
   canAfford,
+  isSummonOpen,
   count,
   total,
   currentSummonCost,
@@ -467,6 +415,7 @@ function MobileDefaultPanel({
   shared: Messages["game"]["shared"]
   connected: boolean
   canAfford: boolean
+  isSummonOpen: boolean
   count: number
   total: number
   currentSummonCost: number
@@ -484,7 +433,7 @@ function MobileDefaultPanel({
         </p>
         <p className="mt-1 font-serif text-2xl text-glow-gold">
           {currentSummonCost.toLocaleString()}{" "}
-          <span className="text-sm text-muted-foreground">$REBC</span>
+          <span className="text-sm text-muted-foreground">$草根社</span>
         </p>
       </div>
 
@@ -556,14 +505,14 @@ function MobileDefaultPanel({
         <div className="flex flex-col gap-2">
           <Button
             size="lg"
-            disabled={!connected || !canAfford || isTxPending}
+            disabled={!connected || !canAfford || isTxPending || !isSummonOpen}
             onClick={onSummon}
             className="h-12 gap-2"
           >
             {isTxPending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : (
-              <RuneAbyssLogo size={16} title={null} />
+              <GrassrootsTokenIcon size={16} title={null} />
             )}
             {isTxPending
               ? s.submitting
@@ -574,6 +523,8 @@ function MobileDefaultPanel({
           </Button>
           {!connected ? (
             <p className="text-[11px] text-muted-foreground">{g.connectHint}</p>
+          ) : !isSummonOpen ? (
+            <p className="text-[11px] text-muted-foreground">{g.drawNotOpenYet}</p>
           ) : !canAfford ? (
             <p className="text-[11px] text-chart-5">
               {interpolate(s.insufficientSummon, { count: String(count) })}
@@ -581,103 +532,6 @@ function MobileDefaultPanel({
           ) : null}
         </div>
       )}
-    </div>
-  )
-}
-
-function MobilePendingPanel({
-  summon: g,
-  shared: s,
-  count,
-  isReady,
-  isExpired,
-  blocksRemaining,
-  totalDelay,
-  waitProgress,
-  isTxPending,
-  onFinalize,
-  onCancel,
-}: {
-  summon: Messages["game"]["summon"]
-  shared: Messages["game"]["shared"]
-  count: number
-  isReady: boolean
-  isExpired: boolean
-  blocksRemaining: number
-  totalDelay: number
-  waitProgress: number
-  isTxPending: boolean
-  onFinalize: () => void
-  onCancel: () => void | Promise<boolean>
-}) {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {isExpired ? (
-            <X className="size-4 text-chart-5" aria-hidden />
-          ) : isReady ? (
-            <CheckCircle2 className="size-4 text-chart-2" aria-hidden />
-          ) : (
-            <Hourglass className="size-4 animate-pulse text-primary" aria-hidden />
-          )}
-          <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-            {isExpired
-              ? "Request expired"
-              : isReady
-                ? "Reveal ready"
-                : "Awaiting block"}
-          </p>
-        </div>
-        <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 font-mono text-[10px] text-primary">
-          ×{count}
-        </span>
-      </div>
-
-      {!isExpired ? (
-        <div>
-          <Progress value={waitProgress} className="h-1.5" />
-          <div className="mt-1.5 flex items-center justify-between font-mono text-[10px] text-muted-foreground">
-            <span>{Math.floor(waitProgress)}%</span>
-            <span>
-              {interpolate(g.blocksLeft, {
-                left: String(blocksRemaining),
-                total: String(totalDelay),
-              })}
-            </span>
-          </div>
-        </div>
-      ) : null}
-
-      <p className="text-[11px] leading-relaxed text-muted-foreground">
-        {isExpired ? g.revealExpired : isReady ? g.revealReady : g.revealWait}
-      </p>
-
-      <div className="flex flex-col gap-2">
-        <Button
-          size="lg"
-          disabled={!isReady || isExpired || isTxPending}
-          onClick={onFinalize}
-          className="h-12 gap-2"
-        >
-          {isTxPending ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden />
-          ) : (
-            <RuneAbyssLogo size={16} title={null} />
-          )}
-          {isReady ? g.finalizeReady : g.finalizeWait}
-        </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          disabled={isTxPending}
-          onClick={onCancel}
-          className="h-11 gap-2"
-        >
-          <X className="size-4" aria-hidden />
-          {g.cancelRequest}
-        </Button>
-      </div>
     </div>
   )
 }

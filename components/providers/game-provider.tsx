@@ -9,12 +9,11 @@
  *   3. 角色 NFT 列表通过 Transfer event diff 重建（仅在 connect / 交易后扫描）
  *   4. 写入交易：先 ensureAllowance，再 writeContract，等待回执，最后 refresh
  *
- * 召唤 / 合成是 commit-reveal 双阶段：
- *   - summon(count) 实际只调 requestDraw，需玩家在 RNG_DELAY_BLOCKS 之后再调 finalizeDraw
- *   - synthesize 同理
+ * 召唤 / 合成单笔即时：draw(count) / synthesize(level)，与副本挑战同一套链上熵。
  */
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { type Address, isAddress, zeroAddress } from "viem"
 
@@ -31,6 +30,7 @@ import {
   CLASS_NAMES,
   DUNGEONS,
   MATERIAL_KEYS,
+  normalizeRarityLevel,
   RARITIES,
   RARITY_BY_LEVEL,
   SUMMON_TIER_SIZE,
@@ -47,12 +47,11 @@ import {
 } from "@/lib/web3/contracts"
 import { bigintToNumber, parseToken, tokenToNumber } from "@/lib/web3/format"
 import {
-  buildCommit,
-  clearSalt,
-  makeSalt,
-  persistSalt,
-  readSalt,
-} from "@/lib/web3/salt"
+  readGlobalDrawEconomy,
+  summonUnitPriceForTx,
+  type GlobalDrawEconomy,
+} from "@/lib/web3/draw-price"
+import { useSummonOpens } from "@/lib/hooks/use-summon-opens"
 
 /** UI 视角的"1 个材料"对应链上 0.1 单位的整数倍 — Number 形式便于 UI 计算 */
 const MATERIAL_UNIT_NUM = Number(MATERIAL_UNIT)
@@ -62,11 +61,15 @@ import {
   readMarketOrder,
   readMarketOrderPage,
   readOwnedCharacters,
+  readProgressState,
+  readExpeditionChainStates,
   readUserState,
+  type ExpeditionChainState,
   getOrderPageScanBudget,
   type ChainCharacter,
   type ChainOrder,
   type GameStatic,
+  type ProgressState,
   type UserState,
 } from "@/lib/web3/reads"
 import {
@@ -77,18 +80,20 @@ import {
   txBindReferrer,
   txBuyOrder,
   txBuyStamina,
-  txCancelDraw,
   txCancelOrder,
-  txCancelSynthesize,
   txChallenge,
+  txChallengeExpeditionChain,
   type ChallengeResult,
+  txClaimDailySpecialistReward,
   txClaimNewbieGift,
   txCreateOrder,
   txCreateTeam,
-  txFinalizeDraw,
-  txFinalizeSynthesize,
-  txRequestDraw,
-  txRequestSynthesize,
+  txDraw,
+  txSynthesize,
+  txBindResonancePartner,
+  txClaimResonanceReward,
+  txReplaceTeamMember,
+  txUnbindTeamCharacter,
 } from "@/lib/web3/writes"
 export type { ChallengeResult } from "@/lib/web3/writes"
 
@@ -129,25 +134,8 @@ export type Inventory = Record<MaterialKey, number>
 
 interface SummonResult {
   ok: boolean
-  /** 提交成功后链上结果未知（commit-reveal），newCharacters 为空 */
   newCharacters?: Character[]
   reason?: string
-}
-
-interface PendingDrawState {
-  count: number
-  /** 可被 finalize 的最早区块 */
-  readyAtBlock: bigint
-  /** 当前已经过了 ready 阈值 */
-  ready: boolean
-  /** 已过期需 cancel */
-  expired: boolean
-}
-interface PendingSynthState {
-  targetLevel: RarityLevel
-  readyAtBlock: bigint
-  ready: boolean
-  expired: boolean
 }
 
 interface GameContextValue {
@@ -177,6 +165,10 @@ interface GameContextValue {
   globalSummoned: number
   charCap: number
   currentSummonCost: number
+  /** Unix seconds; 0 = no gate */
+  drawOpensAt: number
+  /** false while block time < drawOpensAt */
+  isSummonOpen: boolean
 
   // 推荐
   /** 已绑定的直接推荐人地址（字符串）；未绑定为 undefined */
@@ -202,12 +194,14 @@ interface GameContextValue {
   // 新手礼包
   newPlayerGiftClaimed: boolean
 
-  // commit-reveal 状态
-  pendingDraw: PendingDrawState | null
-  pendingSynthesis: PendingSynthState | null
-  currentBlock: bigint
-  rngDelayBlocks: bigint
-  rngExpiryBlocks: bigint
+  /** P0/P1/P2 进度合约状态（GameProgress） */
+  progressState: ProgressState | null
+  expeditionChainStates: ExpeditionChainState[]
+  unbindAdventCost: bigint
+  unbindCooldownSeconds: bigint
+  expeditionChainMaterialBps: number
+  expeditionChainExtraStamina: number
+  expeditionChainSteps: number
 
   // ADVENT → Game 授权（用于 UI 展示"授权 → 召唤"两步流程）
   /** 当前授权额度（链上 18 位 BigInt） */
@@ -243,26 +237,33 @@ interface GameContextValue {
 
   // ─── Actions（全部走真实链） ─────────────────────────────────
   claimNewPlayerGift: () => Promise<boolean>
+  claimDailySpecialistReward: () => Promise<boolean>
+  bindResonancePartner: (partner: string) => Promise<boolean>
+  claimResonanceReward: () => Promise<boolean>
   buyEnergy: (count: number) => Promise<boolean>
   bindReferrer: (referrerAddress: string) => Promise<boolean>
 
-  /** 旧 API：等价于 requestDraw —— 提交召唤请求，结果需 finalize 才知道 */
   summon: (count: number) => Promise<SummonResult>
-  finalizeDraw: () => Promise<boolean>
-  cancelDraw: () => Promise<boolean>
-
-  /** 旧 API：等价于 requestSynthesize */
   synthesize: (level: RarityLevel) => Promise<boolean>
-  finalizeSynthesize: () => Promise<boolean>
-  cancelSynthesize: () => Promise<boolean>
 
   createTeam: (ids: [string, string, string], name?: string) => Promise<boolean>
-  /** 链上不支持解散队伍 — 仅给提示 */
-  disbandTeam: (teamId: string) => void
   challenge: (
     teamId: string,
     dungeonLevel: number,
   ) => Promise<{ ok: boolean; result: ChallengeResult | null }>
+  challengeExpeditionChain: (
+    teamId: string,
+    dungeonLevels: number[],
+  ) => Promise<{ ok: boolean; result: ChallengeResult | null }>
+  unbindTeamCharacter: (
+    teamId: string,
+    slotIndex: number,
+  ) => Promise<boolean>
+  replaceTeamMember: (
+    teamId: string,
+    slotIndex: number,
+    characterId: string,
+  ) => Promise<boolean>
 
   listMaterial: (
     material: MaterialKey,
@@ -278,13 +279,13 @@ const GameContext = React.createContext<GameContextValue | null>(null)
 const initialInventory: Inventory = { AE: 0, BF: 0, MR: 0, ES: 0 }
 
 function chainCharToUi(c: ChainCharacter): Character {
-  // tokenId 很大时取尾部用作 hash
-  const seed = Number(c.tokenId % 1000n)
+  const classIndex =
+    c.classId > 0 ? Math.min(c.classId - 1, CLASS_NAMES.length - 1) : Number(c.tokenId % 1000n) % CLASS_NAMES.length
   return {
     id: c.tokenId.toString(),
-    rarity: c.level as RarityLevel,
+    rarity: normalizeRarityLevel(c.level),
     power: c.power,
-    classIndex: seed % CLASS_NAMES.length,
+    classIndex,
     bornAt: Number(c.tokenId & 0xffffffffn),
   }
 }
@@ -313,7 +314,7 @@ function chainOrderToUi(o: ChainOrder, me: Address | undefined): MarketListing |
   }
 }
 
-const COOLDOWN_MS = 24 * 60 * 60 * 1000
+const COOLDOWN_MS = 90 * 60 * 1000
 
 function chainTeamToUi(
   t: { characterIds: [bigint, bigint, bigint]; lastChallengeAt: bigint },
@@ -352,7 +353,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // 链上数据
   const [staticData, setStaticData] = React.useState<GameStatic | null>(null)
+  const [globalDrawEconomy, setGlobalDrawEconomy] = React.useState<GlobalDrawEconomy | null>(
+    null,
+  )
   const [userState, setUserState] = React.useState<UserState | null>(null)
+  const [progressState, setProgressState] = React.useState<ProgressState | null>(null)
+  const [expeditionChainStates, setExpeditionChainStates] = React.useState<ExpeditionChainState[]>([])
   const [chainCharacters, setChainCharacters] = React.useState<ChainCharacter[]>([])
   const [chainOrders, setChainOrders] = React.useState<ChainOrder[]>([])
   const [marketMaterialFilter, setMarketMaterialFilterState] = React.useState<MaterialKey | "ALL">(
@@ -378,6 +384,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   /** 页面在后台时暂停轮询，减轻低配 Windows 上 Dev Server + 浏览器双重内存压力 */
   const [docVisible, setDocVisible] = React.useState(true)
+  const pathname = usePathname()
+  const shouldPollMarket = pathname?.startsWith("/game/market") ?? false
   React.useEffect(() => {
     if (typeof document === "undefined") return
     const sync = () => setDocVisible(!document.hidden)
@@ -395,15 +403,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     marketLoadedMatchCountRef.current = marketLoadedMatchCount
   }, [marketLoadedMatchCount])
-  /**
-   * 独立维护的"实时区块号"。
-   *
-   * 主 multicall 30s 才跑一次，做副本 / 召唤 commit-reveal 倒计时太慢，
-   * 因此当存在 pending request 时单独以 3s 频率拉 `getBlockNumber()`，
-   * 让 UI 上"剩余 X 区块 / 进度条"能流畅推进。无 pending 时复用 multicall 里的 blockNumber。
-   */
-  const [liveBlock, setLiveBlock] = React.useState<bigint>(0n)
-
   const [isLoading, setIsLoading] = React.useState(false)
   const [isTxPending, setIsTxPending] = React.useState(false)
 
@@ -434,8 +433,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = React.useCallback(async (addr: Address) => {
     try {
-      const state = await readUserState(addr)
+      const [state, progress] = await Promise.all([readUserState(addr), readProgressState(addr)])
       setUserState(state)
+      setProgressState(progress)
+      const chains = await readExpeditionChainStates(addr, state.teams.length)
+      setExpeditionChainStates(chains)
     } catch (err) {
       console.error("[GameProvider] readUserState failed:", err)
     }
@@ -539,17 +541,39 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const refreshGlobalDrawEconomy = React.useCallback(async () => {
+    try {
+      const economy = await readGlobalDrawEconomy()
+      setGlobalDrawEconomy(economy)
+    } catch (err) {
+      console.error("[GameProvider] readGlobalDrawEconomy failed:", err)
+    }
+  }, [])
+
   const refresh = React.useCallback(async () => {
     if (!address) return
     setIsLoading(true)
-    await Promise.all([refreshUser(address), refreshOrders(), refreshCharacters(address)])
+    await Promise.all([
+      refreshUser(address),
+      refreshOrders(),
+      refreshCharacters(address),
+      refreshGlobalDrawEconomy(),
+    ])
     setIsLoading(false)
-  }, [address, refreshUser, refreshOrders, refreshCharacters])
+  }, [address, refreshUser, refreshOrders, refreshCharacters, refreshGlobalDrawEconomy])
 
-  // 启动：拉静态 + 用户状态 + 订单 + 角色
+  // 启动：拉静态 + 全服召唤经济（无需钱包）
   React.useEffect(() => {
     refreshStatic()
-  }, [refreshStatic])
+    refreshGlobalDrawEconomy()
+  }, [refreshStatic, refreshGlobalDrawEconomy])
+
+  // 15 秒轮询全服召唤价 / 进度（DEX 现货预估 + drawnCount；不依赖钱包连接）
+  React.useEffect(() => {
+    if (!docVisible) return
+    const id = setInterval(refreshGlobalDrawEconomy, 15_000)
+    return () => clearInterval(id)
+  }, [docVisible, refreshGlobalDrawEconomy])
 
   // 落地解析 ?ref=<address> — 写入 localStorage，让推荐页 prefill 输入框；
   // 任何页面都生效（用户可能从首页 / 召唤页 / 任意分享链接进入）。
@@ -589,56 +613,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [address, refreshUser, refreshCharacters, refreshOrders])
 
   // 30 秒轮询用户状态 + 订单（链上读取节流：避免免费 RPC 限流；
-  // 角色列表不轮询 — 仅在 finalize / 转账后主动 refreshCharacters）
+  // 角色列表不轮询 — 仅在召唤 / 合成 / 转账后主动 refreshCharacters）
+  // 市场订单仅在 /game/market 路由轮询，其余页面跳过 refreshOrders
   React.useEffect(() => {
     if (!address || !docVisible) return
     const id = setInterval(() => {
       refreshUser(address)
-      refreshOrders()
+      if (shouldPollMarket) refreshOrders()
     }, 30_000)
     return () => clearInterval(id)
-  }, [address, docVisible, refreshUser, refreshOrders])
-
-  // 当存在 pending commit-reveal 请求时，3s 频率拉一次区块号 — 让 UI 倒计时实时推进。
-  // 没有 pending 时不工作，避免常态高频请求 RPC。
-  const hasPending = !!(
-    userState?.pendingDraw.exists || userState?.pendingSynthesis.exists
-  )
-  React.useEffect(() => {
-    if (!hasPending || !docVisible) return
-    let cancelled = false
-    const tick = async () => {
-      try {
-        const bn = await getPublicClient().getBlockNumber()
-        if (!cancelled) setLiveBlock(bn)
-      } catch (err) {
-        console.error("[GameProvider] live blockNumber failed:", err)
-      }
-    }
-    tick()
-    const id = setInterval(tick, 3_000)
-    return () => {
-      cancelled = true
-      clearInterval(id)
-    }
-  }, [hasPending, docVisible])
-
-  // 当 pending 转为 ready（liveBlock 越过 readyAt）时，主动刷新一次完整 user state，
-  // 让 finalize 按钮启用 — 否则要等到下一个 30s 轮询周期。
-  React.useEffect(() => {
-    if (!address || !userState || !staticData) return
-    const p = userState.pendingDraw.exists
-      ? userState.pendingDraw
-      : userState.pendingSynthesis.exists
-        ? userState.pendingSynthesis
-        : null
-    if (!p) return
-    const readyAt = p.requestBlock + staticData.rngDelayBlocks
-    // 已经 ready 但 userState.blockNumber 还落后 → 触发一次 refresh 同步真实状态
-    if (liveBlock >= readyAt && userState.blockNumber < readyAt) {
-      refreshUser(address)
-    }
-  }, [liveBlock, address, userState, staticData, refreshUser])
+  }, [address, docVisible, refreshUser, refreshOrders, shouldPollMarket])
 
   // ─── 钱包连接 ───────────────────────────────────────────────
 
@@ -826,6 +810,35 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return result !== null
   }, [runTx])
 
+  const claimDailySpecialistReward = React.useCallback(async (): Promise<boolean> => {
+    const result = await runTx("领取日任务奖励", (acc) =>
+      txClaimDailySpecialistReward(acc, getWalletClient(acc)!),
+    )
+    return result !== null
+  }, [runTx])
+
+  const bindResonancePartner = React.useCallback(
+    async (partner: string): Promise<boolean> => {
+      const trimmed = partner.trim()
+      if (!isAddress(trimmed)) {
+        toast.error("伙伴地址格式错误")
+        return false
+      }
+      const result = await runTx("绑定共振伙伴", (acc) =>
+        txBindResonancePartner(acc, getWalletClient(acc)!, trimmed as Address),
+      )
+      return result !== null
+    },
+    [runTx],
+  )
+
+  const claimResonanceReward = React.useCallback(async (): Promise<boolean> => {
+    const result = await runTx("领取共振奖励", (acc) =>
+      txClaimResonanceReward(acc, getWalletClient(acc)!),
+    )
+    return result !== null
+  }, [runTx])
+
   const buyEnergy = React.useCallback(
     async (count: number): Promise<boolean> => {
       if (!staticData) {
@@ -867,7 +880,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const approveAdvent = React.useCallback(async (): Promise<boolean> => {
     const acc = requireConnected()
     if (!acc) return false
-    const result = await runTx("授权 $REBC", (a) =>
+    const result = await runTx("授权 $草根社", (a) =>
       txApproveAdventForGame(a, getWalletClient(a)!),
     )
     return result !== null
@@ -900,77 +913,39 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return result !== null
   }, [requireConnected, runTx])
 
-  // ─── Actions：召唤（commit-reveal） ─────────────────────────
+  // ─── Actions：召唤（单笔即时） ─────────────────────────────
 
   const summon = React.useCallback(
     async (count: number): Promise<SummonResult> => {
-      if (!userState || !staticData) {
+      if (!userState) {
         toast.error("数据加载中，请稍后")
         return { ok: false, reason: "loading" }
       }
-      if (userState.pendingDraw.exists) {
-        toast.error("已有待最终化的召唤请求", {
-          description: "请先点击「完成召唤」或取消旧请求",
-        })
-        return { ok: false, reason: "pending" }
-      }
       if (count <= 0) return { ok: false, reason: "invalid" }
+      const opensAt = staticData?.drawOpensAt ?? 0
+      if (opensAt > 0 && Math.floor(Date.now() / 1000) < opensAt) {
+        toast.error("召唤尚未开启")
+        return { ok: false, reason: "not_open" }
+      }
       const acc = requireConnected()
       if (!acc) return { ok: false, reason: "wallet" }
 
-      // commit-reveal: 生成 salt → 算 commit → 在签名前先持久化（防止用户断电后丢失 salt）
-      const salt = makeSalt()
-      const seedCommit = buildCommit(acc, salt)
-      persistSalt("draw", acc, salt)
-
-      const estimated = userState.currentDrawPrice * BigInt(count)
+      const unitPrice =
+        summonUnitPriceForTx(globalDrawEconomy) || userState.currentDrawPrice
+      const estimated = unitPrice * BigInt(count)
       const result = await runTx(`召唤 ×${count}`, (a) =>
-        txRequestDraw(a, getWalletClient(a)!, count, seedCommit, estimated),
+        txDraw(a, getWalletClient(a)!, count, estimated),
       )
 
-      if (result === null) {
-        // 交易未提交成功 — 清理本次 salt
-        clearSalt("draw", acc)
-        return { ok: false, reason: "tx" }
-      }
+      if (result === null) return { ok: false, reason: "tx" }
 
-      toast.message("等待区块确认随机数后再点击「完成召唤」", {
-        description: `延迟约 ${staticData.rngDelayBlocks} 个区块（≈${Number(staticData.rngDelayBlocks) * 3} 秒）`,
-      })
+      await Promise.all([refreshUser(acc), refreshCharacters(acc), refreshGlobalDrawEconomy()])
       return { ok: true, newCharacters: [] }
     },
-    [runTx, userState, staticData],
+    [runTx, userState, requireConnected, refreshUser, refreshCharacters, globalDrawEconomy, refreshGlobalDrawEconomy, staticData],
   )
 
-  const finalizeDraw = React.useCallback(async (): Promise<boolean> => {
-    const acc = requireConnected()
-    if (!acc) return false
-    const salt = readSalt("draw", acc)
-    if (!salt) {
-      toast.error("找不到本次召唤的 salt", {
-        description: "salt 仅存在发起请求的浏览器中。请使用相同钱包/设备完成召唤，或先取消重发",
-      })
-      return false
-    }
-    const result = await runTx("完成召唤", (a) =>
-      txFinalizeDraw(a, getWalletClient(a)!, salt),
-    )
-    if (result !== null) {
-      clearSalt("draw", acc)
-      refreshCharacters(acc)
-    }
-    return result !== null
-  }, [requireConnected, runTx, refreshCharacters])
-
-  const cancelDraw = React.useCallback(async (): Promise<boolean> => {
-    const acc = requireConnected()
-    if (!acc) return false
-    const result = await runTx("取消召唤", (a) => txCancelDraw(a, getWalletClient(a)!))
-    if (result !== null) clearSalt("draw", acc)
-    return result !== null
-  }, [requireConnected, runTx])
-
-  // ─── Actions：合成（commit-reveal） ─────────────────────────
+  // ─── Actions：合成（单笔即时） ─────────────────────────────
 
   const synthesize = React.useCallback(
     async (level: RarityLevel): Promise<boolean> => {
@@ -978,60 +953,19 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         toast.error("数据加载中，请稍后")
         return false
       }
-      if (userState.pendingSynthesis.exists) {
-        toast.error("已有待最终化的合成请求", {
-          description: "请先点击「完成合成」或取消旧请求",
-        })
-        return false
-      }
       const acc = requireConnected()
       if (!acc) return false
 
-      const salt = makeSalt()
-      const seedCommit = buildCommit(acc, salt)
-      persistSalt("synthesis", acc, salt)
-
       const result = await runTx(`合成 Lv.${level}`, (a) =>
-        txRequestSynthesize(a, getWalletClient(a)!, level, seedCommit),
+        txSynthesize(a, getWalletClient(a)!, level),
       )
-      if (result === null) {
-        clearSalt("synthesis", acc)
-        return false
-      }
+      if (result === null) return false
+
+      await Promise.all([refreshUser(acc), refreshCharacters(acc)])
       return true
     },
-    [requireConnected, runTx, userState],
+    [requireConnected, runTx, userState, refreshUser, refreshCharacters],
   )
-
-  const finalizeSynthesize = React.useCallback(async (): Promise<boolean> => {
-    const acc = requireConnected()
-    if (!acc) return false
-    const salt = readSalt("synthesis", acc)
-    if (!salt) {
-      toast.error("找不到本次合成的 salt", {
-        description: "salt 仅存在发起请求的浏览器中。请使用相同钱包/设备完成合成，或先取消重发",
-      })
-      return false
-    }
-    const result = await runTx("完成合成", (a) =>
-      txFinalizeSynthesize(a, getWalletClient(a)!, salt),
-    )
-    if (result !== null) {
-      clearSalt("synthesis", acc)
-      refreshCharacters(acc)
-    }
-    return result !== null
-  }, [requireConnected, runTx, refreshCharacters])
-
-  const cancelSynthesize = React.useCallback(async (): Promise<boolean> => {
-    const acc = requireConnected()
-    if (!acc) return false
-    const result = await runTx("取消合成", (a) =>
-      txCancelSynthesize(a, getWalletClient(a)!),
-    )
-    if (result !== null) clearSalt("synthesis", acc)
-    return result !== null
-  }, [requireConnected, runTx])
 
   // ─── Actions：组队 / 副本 ───────────────────────────────────
 
@@ -1060,13 +994,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     [runTx],
   )
 
-  const disbandTeam = React.useCallback((_teamId: string) => {
-    void _teamId
-    toast.info("链上不支持解散队伍", {
-      description: "队伍一旦创建即永久存在 — 可继续挑战其他副本",
-    })
-  }, [])
-
   const challenge = React.useCallback(
     async (
       teamId: string,
@@ -1091,6 +1018,72 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return { ok: true, result: tx.result }
     },
     [runTx, address, refreshCharacters],
+  )
+
+  const challengeExpeditionChain = React.useCallback(
+    async (
+      teamId: string,
+      dungeonLevels: number[],
+    ): Promise<{ ok: boolean; result: ChallengeResult | null }> => {
+      const teamIndex = Number(teamId)
+      if (!Number.isInteger(teamIndex) || teamIndex < 0) {
+        toast.error("队伍索引非法")
+        return { ok: false, result: null }
+      }
+      const tx = await runTx(
+        `远征链 ${dungeonLevels.join("→")}`,
+        (acc) =>
+          txChallengeExpeditionChain(acc, getWalletClient(acc)!, teamIndex, dungeonLevels),
+      )
+      if (!tx) return { ok: false, result: null }
+      if (address) {
+        refreshCharacters(address)
+        await refreshUser(address)
+      }
+      return { ok: true, result: tx.result }
+    },
+    [runTx, address, refreshCharacters, refreshUser],
+  )
+
+  const unbindTeamCharacter = React.useCallback(
+    async (teamId: string, slotIndex: number): Promise<boolean> => {
+      const teamIndex = Number(teamId)
+      if (!Number.isInteger(teamIndex) || teamIndex < 0 || slotIndex < 0 || slotIndex > 2) {
+        toast.error("参数非法")
+        return false
+      }
+      const cost = staticData?.unbindAdventCost ?? 0n
+      if (cost === 0n) {
+        toast.error("解绑功能未开启")
+        return false
+      }
+      const result = await runTx("解绑队员", (acc) =>
+        txUnbindTeamCharacter(acc, getWalletClient(acc)!, teamIndex, slotIndex, cost),
+      )
+      return result !== null
+    },
+    [runTx, staticData],
+  )
+
+  const replaceTeamMember = React.useCallback(
+    async (teamId: string, slotIndex: number, characterId: string): Promise<boolean> => {
+      const teamIndex = Number(teamId)
+      if (!Number.isInteger(teamIndex) || teamIndex < 0 || slotIndex < 0 || slotIndex > 2) {
+        toast.error("参数非法")
+        return false
+      }
+      try {
+        const tokenId = BigInt(characterId)
+        const result = await runTx("调整队员", (acc) =>
+          txReplaceTeamMember(acc, getWalletClient(acc)!, teamIndex, slotIndex, tokenId),
+        )
+        return result !== null
+      } catch {
+        toast.error("角色 ID 非法")
+        return false
+      }
+    },
+    [runTx],
   )
 
   // ─── Actions：市场 ───────────────────────────────────────────
@@ -1180,14 +1173,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const energy = userState ? bigintToNumber(userState.staminaPoints) : 0
 
   // 链上库存以 0.1 为最小单位 — 除以 MATERIAL_UNIT 转回用户视角的"整数 + 1 位小数"
-  const inventory: Inventory = userState
-    ? {
-        AE: Number(userState.materialBalances.AE) / MATERIAL_UNIT_NUM,
-        BF: Number(userState.materialBalances.BF) / MATERIAL_UNIT_NUM,
-        MR: Number(userState.materialBalances.MR) / MATERIAL_UNIT_NUM,
-        ES: Number(userState.materialBalances.ES) / MATERIAL_UNIT_NUM,
-      }
-    : initialInventory
+  const inventory: Inventory = React.useMemo(
+    () =>
+      userState
+        ? {
+            AE: Number(userState.materialBalances.AE) / MATERIAL_UNIT_NUM,
+            BF: Number(userState.materialBalances.BF) / MATERIAL_UNIT_NUM,
+            MR: Number(userState.materialBalances.MR) / MATERIAL_UNIT_NUM,
+            ES: Number(userState.materialBalances.ES) / MATERIAL_UNIT_NUM,
+          }
+        : initialInventory,
+    [userState],
+  )
 
   const characters: Character[] = React.useMemo(
     () => chainCharacters.map(chainCharToUi),
@@ -1205,14 +1202,28 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       .filter((x): x is MarketListing => x !== null)
   }, [chainOrders, address])
 
-  const globalSummoned = userState ? bigintToNumber(userState.drawnCount) : 0
+  const globalSummoned = globalDrawEconomy
+    ? bigintToNumber(globalDrawEconomy.drawnCount)
+    : userState
+      ? bigintToNumber(userState.drawnCount)
+      : 0
   const charCap = staticData ? bigintToNumber(staticData.drawCap) : 6_000
-  const currentSummonCost = userState ? tokenToNumber(userState.currentDrawPrice) : 50_000
+  const drawOpensAt = staticData?.drawOpensAt ?? 0
+  const { isOpen: isSummonOpen } = useSummonOpens(drawOpensAt)
+  const currentSummonCost = globalDrawEconomy
+    ? tokenToNumber(globalDrawEconomy.displayDrawPrice)
+    : userState
+      ? tokenToNumber(userState.currentDrawPrice)
+      : 0
 
+  const summonUnitPrice =
+    summonUnitPriceForTx(globalDrawEconomy) ||
+    userState?.currentDrawPrice ||
+    0n
   // ADVENT → Game 授权状态：足以覆盖一次 ×10 召唤的 1.5x buffer（≈15 倍当前单价）即可视为已授权
   const adventAllowanceForGame = userState?.adventAllowanceForGame ?? 0n
   const isAdventApproved = userState
-    ? adventAllowanceForGame >= userState.currentDrawPrice * 15n
+    ? adventAllowanceForGame >= summonUnitPrice * 15n
     : false
 
   // USDT → Stamina 授权状态：阈值取一个保守的"购买 100 点体力"额度
@@ -1242,102 +1253,141 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       ? userState.effectiveIndirect
       : undefined
 
-  // 取实时区块号 — 优先使用 fast ticker 的 liveBlock；首次拿不到时回落到 multicall 里的 blockNumber
-  const effectiveBlock =
-    liveBlock > 0n ? liveBlock : (userState?.blockNumber ?? 0n)
-
-  // commit-reveal pending 派生
-  const pendingDraw: PendingDrawState | null = React.useMemo(() => {
-    if (!userState || !staticData) return null
-    const p = userState.pendingDraw
-    if (!p.exists) return null
-    const readyAt = p.requestBlock + staticData.rngDelayBlocks
-    const expireAt = p.requestBlock + staticData.rngExpiryBlocks
-    return {
-      count: p.count,
-      readyAtBlock: readyAt,
-      ready: effectiveBlock >= readyAt,
-      expired: effectiveBlock > expireAt,
-    }
-  }, [userState, staticData, effectiveBlock])
-
-  const pendingSynthesis: PendingSynthState | null = React.useMemo(() => {
-    if (!userState || !staticData) return null
-    const p = userState.pendingSynthesis
-    if (!p.exists) return null
-    const readyAt = p.requestBlock + staticData.rngDelayBlocks
-    const expireAt = p.requestBlock + staticData.rngExpiryBlocks
-    return {
-      targetLevel: p.count as RarityLevel,
-      readyAtBlock: readyAt,
-      ready: effectiveBlock >= readyAt,
-      expired: effectiveBlock > expireAt,
-    }
-  }, [userState, staticData, effectiveBlock])
-
-  const value: GameContextValue = {
-    connected,
-    address,
-    shortAddress: address ? shortenAddress(address) : undefined,
-    chainId,
-    walletKind,
-    isRealWallet: true,
-    isWrongChain,
-    connect,
-    disconnect,
-    advent,
-    usdt,
-    energy,
-    inventory,
-    characters,
-    teams,
-    globalSummoned,
-    charCap,
-    currentSummonCost,
-    referrer,
-    effectiveDirect,
-    effectiveIndirect,
-    myReferralCode: address ?? "",
-    listings,
-    setMarketMaterialFilter,
-    marketLoadedMatchCount,
-    marketHasMore,
-    ensureMarketWindow,
-    newPlayerGiftClaimed: userState?.newbieGiftClaimed ?? false,
-    pendingDraw,
-    pendingSynthesis,
-    currentBlock: effectiveBlock,
-    rngDelayBlocks: staticData?.rngDelayBlocks ?? 0n,
-    rngExpiryBlocks: staticData?.rngExpiryBlocks ?? 0n,
-    adventAllowanceForGame,
-    isAdventApproved,
-    approveAdvent,
-    usdtAllowanceForStamina,
-    isUsdtApprovedForStamina,
-    approveUsdtForStamina,
-    usdtAllowanceForMarketplace,
-    approveUsdtForMarketplace,
-    isMaterialsApprovedForMarketplace,
-    approveMaterialsForMarketplace,
-    isLoading,
-    isTxPending,
-    refresh,
-    claimNewPlayerGift,
-    buyEnergy,
-    bindReferrer,
-    summon,
-    finalizeDraw,
-    cancelDraw,
-    synthesize,
-    finalizeSynthesize,
-    cancelSynthesize,
-    createTeam,
-    disbandTeam,
-    challenge,
-    listMaterial,
-    cancelListing,
-    buyListing,
-  }
+  const value: GameContextValue = React.useMemo(
+    () => ({
+      connected,
+      address,
+      shortAddress: address ? shortenAddress(address) : undefined,
+      chainId,
+      walletKind,
+      isRealWallet: true,
+      isWrongChain,
+      connect,
+      disconnect,
+      advent,
+      usdt,
+      energy,
+      inventory,
+      characters,
+      teams,
+      globalSummoned,
+      charCap,
+      currentSummonCost,
+      drawOpensAt,
+      isSummonOpen,
+      referrer,
+      effectiveDirect,
+      effectiveIndirect,
+      myReferralCode: address ?? "",
+      listings,
+      setMarketMaterialFilter,
+      marketLoadedMatchCount,
+      marketHasMore,
+      ensureMarketWindow,
+      newPlayerGiftClaimed: userState?.newbieGiftClaimed ?? false,
+      progressState,
+      expeditionChainStates,
+      unbindAdventCost: staticData?.unbindAdventCost ?? 0n,
+      unbindCooldownSeconds: staticData?.unbindCooldownSeconds ?? 0n,
+      expeditionChainMaterialBps: staticData?.expeditionChainMaterialBps ?? 13_000,
+      expeditionChainExtraStamina: staticData?.expeditionChainExtraStamina ?? 2,
+      expeditionChainSteps: staticData?.expeditionChainSteps ?? 3,
+      adventAllowanceForGame,
+      isAdventApproved,
+      approveAdvent,
+      usdtAllowanceForStamina,
+      isUsdtApprovedForStamina,
+      approveUsdtForStamina,
+      usdtAllowanceForMarketplace,
+      approveUsdtForMarketplace,
+      isMaterialsApprovedForMarketplace,
+      approveMaterialsForMarketplace,
+      isLoading,
+      isTxPending,
+      refresh,
+      claimNewPlayerGift,
+      claimDailySpecialistReward,
+      bindResonancePartner,
+      claimResonanceReward,
+      buyEnergy,
+      bindReferrer,
+      summon,
+      synthesize,
+      createTeam,
+      challenge,
+      challengeExpeditionChain,
+      unbindTeamCharacter,
+      replaceTeamMember,
+      listMaterial,
+      cancelListing,
+      buyListing,
+    }),
+    [
+      connected,
+      address,
+      chainId,
+      walletKind,
+      isWrongChain,
+      connect,
+      disconnect,
+      advent,
+      usdt,
+      energy,
+      inventory,
+      characters,
+      teams,
+      globalSummoned,
+      charCap,
+      currentSummonCost,
+      drawOpensAt,
+      isSummonOpen,
+      referrer,
+      effectiveDirect,
+      effectiveIndirect,
+      listings,
+      setMarketMaterialFilter,
+      marketLoadedMatchCount,
+      marketHasMore,
+      ensureMarketWindow,
+      userState?.newbieGiftClaimed,
+      progressState,
+      expeditionChainStates,
+      staticData?.unbindAdventCost,
+      staticData?.unbindCooldownSeconds,
+      staticData?.expeditionChainMaterialBps,
+      staticData?.expeditionChainExtraStamina,
+      staticData?.expeditionChainSteps,
+      adventAllowanceForGame,
+      isAdventApproved,
+      approveAdvent,
+      usdtAllowanceForStamina,
+      isUsdtApprovedForStamina,
+      approveUsdtForStamina,
+      usdtAllowanceForMarketplace,
+      approveUsdtForMarketplace,
+      isMaterialsApprovedForMarketplace,
+      approveMaterialsForMarketplace,
+      isLoading,
+      isTxPending,
+      refresh,
+      claimNewPlayerGift,
+      claimDailySpecialistReward,
+      bindResonancePartner,
+      claimResonanceReward,
+      buyEnergy,
+      bindReferrer,
+      summon,
+      synthesize,
+      createTeam,
+      challenge,
+      challengeExpeditionChain,
+      unbindTeamCharacter,
+      replaceTeamMember,
+      listMaterial,
+      cancelListing,
+      buyListing,
+    ],
+  )
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>
 }

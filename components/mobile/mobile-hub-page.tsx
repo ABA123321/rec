@@ -33,11 +33,13 @@ import {
   MATERIAL_KEYS,
   SUMMON_TIER_SIZE,
   summonCapPhaseProgress,
+  summonPhaseCostTotals,
 } from "@/lib/game-data"
 import { interpolate } from "@/lib/i18n/interpolate"
+import { HubExpeditionDashboard } from "@/components/game/hub-expedition-dashboard"
 import { CharacterCard } from "@/components/game/character-card"
 import { MaterialIcon } from "@/components/game/material-icon"
-import { RuneAbyssLogo } from "@/components/brand/rune-abyss-logo"
+import { GrassrootsTokenIcon } from "@/components/brand/grassroots-token-icon"
 import { UsdtIcon } from "@/components/brand/usdt-icon"
 
 import {
@@ -75,6 +77,11 @@ export function MobileHubPage() {
   } = useGame()
 
   const capPhase = summonCapPhaseProgress(globalSummoned, charCap)
+  const phaseCost = summonPhaseCostTotals(
+    capPhase.phaseFilled,
+    capPhase.phaseSize,
+    currentSummonCost,
+  )
   const idleTeams = teams.filter((t) => t.cooldownUntil <= Date.now()).length
 
   const quickLinks = [
@@ -147,8 +154,8 @@ export function MobileHubPage() {
             {/* 关键数据：2 列紧凑卡片 */}
             <section className="grid grid-cols-2 gap-2.5">
               <MiniStat
-                icon={<RuneAbyssLogo size={14} title={null} />}
-                label="$REBC"
+                icon={<GrassrootsTokenIcon size={14} title={null} />}
+                label="$草根社"
                 value={advent.toLocaleString()}
                 hint={interpolate(h.statNextPull, {
                   cost: currentSummonCost.toLocaleString(),
@@ -175,6 +182,8 @@ export function MobileHubPage() {
                 hint={interpolate(h.statIdleTeams, { n: String(idleTeams) })}
               />
             </section>
+
+            <HubExpeditionDashboard />
 
             {/* 材料库存 */}
             <MobileSection
@@ -221,8 +230,8 @@ export function MobileHubPage() {
                     </span>
                     <span className="text-[10px] font-normal text-muted-foreground">
                       {interpolate(h.cumulativeShort, {
-                        summoned: globalSummoned.toLocaleString(),
-                        cap: charCap.toLocaleString(),
+                        spent: phaseCost.spent.toLocaleString(),
+                        total: phaseCost.total.toLocaleString(),
                       })}
                     </span>
                   </div>
@@ -233,7 +242,7 @@ export function MobileHubPage() {
                     tier: SUMMON_TIER_SIZE.toLocaleString(),
                   })}
                   <span className="ml-1 font-mono text-primary">
-                    {currentSummonCost.toLocaleString()} $REBC
+                    {currentSummonCost.toLocaleString()} $草根社
                   </span>
                 </p>
               </div>

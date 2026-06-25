@@ -13,7 +13,7 @@ import {
   Zap,
 } from "lucide-react"
 
-import { RuneAbyssLogo } from "@/components/brand/rune-abyss-logo"
+import { GrassrootsTokenIcon } from "@/components/brand/grassroots-token-icon"
 import { UsdtIcon } from "@/components/brand/usdt-icon"
 import { TopBar } from "@/components/game/top-bar"
 import { MaterialIcon } from "@/components/game/material-icon"
@@ -36,8 +36,10 @@ import {
   MATERIAL_KEYS,
   SUMMON_TIER_SIZE,
   summonCapPhaseProgress,
+  summonPhaseCostTotals,
 } from "@/lib/game-data"
 import { interpolate } from "@/lib/i18n/interpolate"
+import { HubExpeditionDashboard } from "@/components/game/hub-expedition-dashboard"
 
 /**
  * 主控台桌面端 —— 由原 app/game/page.tsx 抽取，未做功能修改。
@@ -63,6 +65,11 @@ export function DesktopHubPage() {
   } = useGame()
 
   const capPhase = summonCapPhaseProgress(globalSummoned, charCap)
+  const phaseCost = summonPhaseCostTotals(
+    capPhase.phaseFilled,
+    capPhase.phaseSize,
+    currentSummonCost,
+  )
   const idleTeams = teams.filter((t) => t.cooldownUntil <= Date.now()).length
 
   const quickLinks = [
@@ -128,8 +135,8 @@ export function DesktopHubPage() {
 
             <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
-                icon={<RuneAbyssLogo size={16} title={null} />}
-                label="$REBC"
+                icon={<GrassrootsTokenIcon size={16} title={null} />}
+                label="$草根社"
                 value={advent.toLocaleString()}
                 hint={interpolate(h.statNextPull, {
                   cost: currentSummonCost.toLocaleString(),
@@ -154,6 +161,8 @@ export function DesktopHubPage() {
                 hint={interpolate(h.statIdleTeams, { n: String(idleTeams) })}
               />
             </section>
+
+            <HubExpeditionDashboard />
 
             <section className="grid gap-4 lg:grid-cols-3">
               <Card className="lg:col-span-2 border-border bg-card/60">
@@ -193,8 +202,8 @@ export function DesktopHubPage() {
                         {interpolate(h.phaseLineDesktop, {
                           phaseDisplay: String(capPhase.phaseDisplay),
                           phaseTotal: String(capPhase.phaseTotal),
-                          summoned: globalSummoned.toLocaleString(),
-                          cap: charCap.toLocaleString(),
+                          spent: phaseCost.spent.toLocaleString(),
+                          total: phaseCost.total.toLocaleString(),
                         })}
                       </span>
                     </div>
@@ -220,7 +229,7 @@ export function DesktopHubPage() {
                         tier: SUMMON_TIER_SIZE.toLocaleString(),
                       })}
                       <span className="ml-1 font-mono text-primary">
-                        {currentSummonCost.toLocaleString()} $REBC
+                        {currentSummonCost.toLocaleString()} $草根社
                       </span>
                     </p>
                   </div>

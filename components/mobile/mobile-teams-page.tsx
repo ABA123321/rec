@@ -8,12 +8,13 @@ import {
   Plus,
   Sparkles,
   Sword,
-  Trash2,
   Users,
 } from "lucide-react"
 
 import { CharacterCard } from "@/components/game/character-card"
 import { TeamFormationModal } from "@/components/game/team-formation-modal"
+import { TeamSlotCell } from "@/components/game/team-replace-dialog"
+import { TeamUnbindMenuButton } from "@/components/game/team-unbind-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -44,8 +45,7 @@ const AVAILABLE_PAGE = 12
 const TEAMS_PAGE = 2
 
 export function MobileTeamsPage() {
-  const { characters, teams, createTeam, disbandTeam, connected, connect } =
-    useGame()
+  const { characters, teams, createTeam, connected, connect } = useGame()
 
   const { messages: loc } = useLocale()
   const t = loc.game.teams
@@ -232,10 +232,11 @@ export function MobileTeamsPage() {
               ) : (
                 <ul className="flex flex-col gap-3">
                   {teamsPaged.map((team) => {
-                    const members = team.characterIds
-                      .map((id) => charById.get(id))
-                      .filter(Boolean) as Character[]
-                    const power = members.reduce((s, c) => s + c.power, 0)
+                    const power = team.characterIds.reduce((sum, id) => {
+                      const c = id !== "0" ? charById.get(id) : undefined
+                      return sum + (c?.power ?? 0)
+                    }, 0)
+                    const isFull = team.characterIds.every((id) => id !== "0")
                     const cooling = team.cooldownUntil > Date.now()
                     const remaining = cooling
                       ? Math.ceil((team.cooldownUntil - Date.now()) / 60_000)
@@ -265,11 +266,13 @@ export function MobileTeamsPage() {
                             </div>
 
                             <div className="mt-3 grid grid-cols-3 gap-1.5">
-                              {members.map((member) => (
-                                <CharacterCard
-                                  key={member.id}
-                                  character={member}
-                                  size="sm"
+                              {team.characterIds.map((_, slotIndex) => (
+                                <TeamSlotCell
+                                  key={slotIndex}
+                                  teamId={team.id}
+                                  slotIndex={slotIndex}
+                                  characterIds={team.characterIds}
+                                  charactersById={charById}
                                 />
                               ))}
                             </div>
@@ -298,24 +301,22 @@ export function MobileTeamsPage() {
                                 <Button
                                   asChild
                                   size="sm"
-                                  disabled={cooling}
-                                  variant={cooling ? "outline" : "default"}
+                                  disabled={cooling || !isFull}
+                                  variant={cooling || !isFull ? "outline" : "default"}
                                   className="h-8 gap-1 text-xs"
+                                  title={!isFull ? t.teamIncomplete : undefined}
                                 >
                                   <Link href="/game/dungeons">
                                     <Sword className="size-3" aria-hidden />
                                     {t.dispatch}
                                   </Link>
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
+                                <TeamUnbindMenuButton
+                                  teamId={team.id}
+                                  characterIds={team.characterIds}
+                                  charactersById={charById}
                                   className="h-8 gap-1 text-xs text-destructive hover:text-destructive"
-                                  onClick={() => disbandTeam(team.id)}
-                                >
-                                  <Trash2 className="size-3" aria-hidden />
-                                  {t.disband}
-                                </Button>
+                                />
                               </div>
                             </div>
                           </CardContent>

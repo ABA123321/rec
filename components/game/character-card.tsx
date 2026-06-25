@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { useLocale } from "@/components/providers/locale-provider"
 import { interpolate } from "@/lib/i18n/interpolate"
 import { displayClass, displayRarity } from "@/lib/i18n/game-display"
-import { CLASS_NAMES, RARITY_BY_LEVEL } from "@/lib/game-data"
+import { CLASS_NAMES, normalizeRarityLevel, RARITY_BY_LEVEL } from "@/lib/game-data"
 import type { Character } from "@/components/providers/game-provider"
 
 const TONE_BG: Record<1 | 2 | 3 | 4 | 5, string> = {
@@ -57,7 +57,7 @@ export function CharacterCard({
   const { messages: loc } = useLocale()
   const g = loc.game
   const sh = g.shared
-  const r = RARITY_BY_LEVEL[character.rarity]
+  const r = RARITY_BY_LEVEL[normalizeRarityLevel(character.rarity)]
   const rv = displayRarity(g, character.rarity)
   const className = displayClass(g, character.classIndex % CLASS_NAMES.length)
   const Wrapper: React.ElementType = selectable ? "button" : "div"

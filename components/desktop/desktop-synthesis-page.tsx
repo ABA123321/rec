@@ -1,10 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { CheckCircle2, FlaskConical, Hourglass, Loader2, Skull, X } from "lucide-react"
+import { FlaskConical, Loader2, Skull } from "lucide-react"
 
-import { cn } from "@/lib/utils"
-import { RuneAbyssLogo } from "@/components/brand/rune-abyss-logo"
+import { GrassrootsTokenIcon } from "@/components/brand/grassroots-token-icon"
 import { TopBar } from "@/components/game/top-bar"
 import { MaterialIcon } from "@/components/game/material-icon"
 import { SynthesisAnimationModal } from "@/components/game/synthesis-animation-modal"
@@ -16,9 +15,8 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty"
-import { Progress } from "@/components/ui/progress"
-import { useGame, type Character } from "@/components/providers/game-provider"
 import { useLocale } from "@/components/providers/locale-provider"
+import { useGame, type Character } from "@/components/providers/game-provider"
 import { interpolate } from "@/lib/i18n/interpolate"
 import { displayRarity } from "@/lib/i18n/game-display"
 import {
@@ -32,7 +30,6 @@ import {
 export function DesktopSynthesisPage() {
   const { messages: loc } = useLocale()
   const sy = loc.game.synthesis
-  const su = loc.game.summon
   const s = loc.game.shared
 
   const {
@@ -41,65 +38,32 @@ export function DesktopSynthesisPage() {
     advent,
     inventory,
     synthesize,
-    finalizeSynthesize,
-    cancelSynthesize,
-    pendingSynthesis,
-    currentBlock,
-    rngDelayBlocks,
     isTxPending,
     characters,
   } = useGame()
 
-  // 合成动画
   const [animLevel, setAnimLevel] = React.useState<RarityLevel | null>(null)
   const [animOpen, setAnimOpen] = React.useState(false)
   const [animResult, setAnimResult] = React.useState<Character | null>(null)
-  const charsBeforeFinalizeRef = React.useRef<number | null>(null)
-
-  // commit-reveal 状态
-  const hasPending = !!pendingSynthesis
-  const blocksRemaining = pendingSynthesis
-    ? Number(
-        pendingSynthesis.readyAtBlock > currentBlock
-          ? pendingSynthesis.readyAtBlock - currentBlock
-          : 0n,
-      )
-    : 0
-  const totalDelayBlocks = Number(rngDelayBlocks || 1n)
-  const waitProgress = pendingSynthesis
-    ? Math.min(
-        100,
-        ((totalDelayBlocks - blocksRemaining) / totalDelayBlocks) * 100,
-      )
-    : 0
-  const isExpired = !!pendingSynthesis?.expired
-  const isReady = !!pendingSynthesis?.ready && !isExpired
-  const isWaiting = hasPending && !isReady && !isExpired
+  const charsBeforeSynthRef = React.useRef<number | null>(null)
 
   const startSynthesis = async (level: RarityLevel) => {
-    if (hasPending || isTxPending) return
-    await synthesize(level)
-  }
-
-  const handleFinalize = async () => {
-    if (!isReady || isTxPending) return
-    const level = pendingSynthesis!.targetLevel
-    charsBeforeFinalizeRef.current = characters.length
+    if (isTxPending) return
+    charsBeforeSynthRef.current = characters.length
     setAnimLevel(level)
-    const ok = await finalizeSynthesize()
+    const ok = await synthesize(level)
     if (ok) {
       setAnimResult(null)
       setAnimOpen(true)
     }
   }
 
-  // 监听 characters 长度增长 → 把新合成的角色作为 prop 传入
   React.useEffect(() => {
     if (!animOpen || animResult) return
-    const before = charsBeforeFinalizeRef.current
+    const before = charsBeforeSynthRef.current
     if (before == null) return
     if (characters.length > before) {
-      setAnimResult(characters[0])
+      setAnimResult(characters[characters.length - 1])
     }
   }, [animOpen, animResult, characters])
 
@@ -119,24 +83,6 @@ export function DesktopSynthesisPage() {
           </Empty>
         ) : (
           <div className="flex flex-col gap-6">
-            {/* commit-reveal 状态横幅 */}
-            {hasPending ? (
-              <PendingSynthBanner
-                level={pendingSynthesis!.targetLevel}
-                isReady={isReady}
-                isExpired={isExpired}
-                isWaiting={isWaiting}
-                blocksRemaining={blocksRemaining}
-                totalDelay={totalDelayBlocks}
-                waitProgress={waitProgress}
-                isTxPending={isTxPending}
-                onFinalize={handleFinalize}
-                onCancel={cancelSynthesize}
-                variant="desktop"
-              />
-            ) : null}
-
-            {/* Inventory */}
             <Card className="border-border bg-card/60">
               <CardContent className="p-5">
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
@@ -156,8 +102,8 @@ export function DesktopSynthesisPage() {
                 </ul>
                 <div className="mt-3 flex items-center justify-between rounded-lg border border-border bg-background/40 p-3">
                   <div className="flex items-center gap-2 text-sm">
-                    <RuneAbyssLogo size={16} title={null} />
-                    <span className="text-muted-foreground">$REBC</span>
+                    <GrassrootsTokenIcon size={16} title={null} />
+                    <span className="text-muted-foreground">$草根社</span>
                   </div>
                   <span className="font-mono text-lg">{advent.toLocaleString()}</span>
                 </div>
@@ -198,9 +144,7 @@ export function DesktopSynthesisPage() {
                     5: "border-chart-5/70",
                   }
 
-                  // 链上一次只允许一个 pending synth → pending 时禁用所有按钮
-                  const buttonDisabled =
-                    !canCraft || hasPending || isTxPending
+                  const buttonDisabled = !canCraft || isTxPending
 
                   return (
                     <li key={cost.level}>
@@ -261,7 +205,7 @@ export function DesktopSynthesisPage() {
                             }`}
                           >
                             <span className="flex items-center gap-2 text-sm">
-                              <RuneAbyssLogo size={14} title={null} />
+                              <GrassrootsTokenIcon size={14} title={null} />
                               <span className="text-muted-foreground">{sy.adventBurn}</span>
                             </span>
                             <span
@@ -286,7 +230,7 @@ export function DesktopSynthesisPage() {
                               ) : (
                                 <FlaskConical className="size-4" aria-hidden />
                               )}
-                              {hasPending ? sy.inProgress : sy.submit}
+                              {isTxPending ? s.submitting : sy.submit}
                             </Button>
                           </div>
                         </CardContent>
@@ -297,10 +241,7 @@ export function DesktopSynthesisPage() {
               </ul>
 
               <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-                <span className="text-primary">{sy.crExplainerPrefix}</span>
-                {interpolate(sy.crExplainerSuffix, {
-                  blocks: String(totalDelayBlocks),
-                })}
+                合成在单笔交易中即时完成，结果由链上伪随机数决定。
               </p>
             </section>
           </div>
@@ -316,159 +257,9 @@ export function DesktopSynthesisPage() {
           setAnimOpen(false)
           setAnimLevel(null)
           setAnimResult(null)
-          charsBeforeFinalizeRef.current = null
+          charsBeforeSynthRef.current = null
         }}
       />
     </>
-  )
-}
-
-function PendingSynthBanner({
-  level,
-  isReady,
-  isExpired,
-  isWaiting,
-  blocksRemaining,
-  totalDelay,
-  waitProgress,
-  isTxPending,
-  onFinalize,
-  onCancel,
-  variant,
-}: {
-  level: RarityLevel
-  isReady: boolean
-  isExpired: boolean
-  isWaiting: boolean
-  blocksRemaining: number
-  totalDelay: number
-  waitProgress: number
-  isTxPending: boolean
-  onFinalize: () => void
-  onCancel: () => Promise<boolean>
-  variant: "desktop" | "mobile"
-}) {
-  const { messages: loc } = useLocale()
-  const sy = loc.game.synthesis
-  const su = loc.game.summon
-  const s = loc.game.shared
-  const rv = displayRarity(loc.game, level)
-
-  const statusMain = isExpired
-    ? variant === "desktop"
-      ? sy.statusBannerExpired
-      : sy.statusExpired
-    : isReady
-      ? sy.statusReady
-      : sy.statusWait
-  const pendingTitle =
-    variant === "desktop"
-      ? interpolate(sy.pendingLine, { status: statusMain, name: rv.name })
-      : interpolate(sy.pendingLineShort, { status: statusMain, name: rv.name })
-
-  return (
-    <Card
-      className={cn(
-        "border bg-card/60",
-        isExpired
-          ? "border-destructive/40"
-          : isReady
-            ? "border-chart-2/45"
-            : "border-primary/40",
-      )}
-    >
-      <CardContent className="flex flex-col gap-4 p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <span
-              className={cn(
-                "flex size-11 shrink-0 items-center justify-center rounded-full border",
-                isExpired
-                  ? "border-destructive/50 bg-destructive/15 text-destructive"
-                  : isReady
-                    ? "border-chart-2/50 bg-chart-2/15 text-chart-2"
-                    : "border-primary/50 bg-primary/15 text-primary",
-              )}
-            >
-              {isExpired ? (
-                <X className="size-5" aria-hidden />
-              ) : isReady ? (
-                <CheckCircle2 className="size-5" aria-hidden />
-              ) : (
-                <Hourglass className="size-5 animate-pulse" aria-hidden />
-              )}
-            </span>
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                {isExpired
-                  ? sy.pendingRowTagExpired
-                  : isReady
-                    ? sy.pendingRowTagReady
-                    : sy.pendingRowTagWait}
-              </p>
-              <p className="font-serif text-lg sm:text-xl">{pendingTitle}</p>
-            </div>
-          </div>
-        </div>
-
-        {isWaiting || isReady ? (
-          <div>
-            <Progress value={isReady ? 100 : waitProgress} className="h-2" />
-            <div className="mt-2 flex items-center justify-between font-mono text-[11px] text-muted-foreground">
-              <span>{su.blockProgress}</span>
-              <span>
-                {isReady
-                  ? interpolate(su.blocksDone, {
-                      cur: String(totalDelay),
-                      total: String(totalDelay),
-                    })
-                  : interpolate(su.blocksNeed, { n: String(blocksRemaining) })}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">{sy.synthExpiredHint}</p>
-        )}
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-          {isExpired ? (
-            <Button
-              variant="outline"
-              disabled={isTxPending}
-              onClick={onCancel}
-              className="gap-2"
-            >
-              {isTxPending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <X className="size-4" aria-hidden />}
-              {su.cancelRequest}
-            </Button>
-          ) : (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isTxPending}
-                onClick={onCancel}
-                className="gap-2"
-              >
-                {s.cancel}
-              </Button>
-              <Button
-                size="lg"
-                disabled={!isReady || isTxPending}
-                onClick={onFinalize}
-                className="gap-2"
-              >
-                {isTxPending ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                ) : (
-                  <FlaskConical className="size-4" aria-hidden />
-                )}
-                {isTxPending ? s.revealing : sy.finishSynth}
-              </Button>
-            </>
-          )}
-        </div>
-      </CardContent>
-    </Card>
   )
 }
