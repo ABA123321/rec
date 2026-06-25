@@ -3,16 +3,13 @@
  *
  * 关键设计：
  *   1. 所有 write 都先 ensure*Allowance —— 缺额时申请 max uint256。
- *   2. 抽卡 / 合成走 commit-reveal 双阶段：
- *        request*WithCommit(... seedCommit)  → 等 ≥ RNG_DELAY_BLOCKS → finalize*WithSalt(salt)
- *      Salt 由调用方传入（GameProvider 已通过 lib/web3/salt 模块管理 localStorage 持久化）。
+ *   2. 抽卡 / 合成单笔即时完成：draw(count) / synthesize(level)
  *   3. 抽卡 / 合成扣 ADVENT，不是 USDT。Stamina.buy / Marketplace.buy 才扣 USDT。
  *   4. 撤单使用 cancelOrderEvenIfPaused — 即使合约暂停，玩家依然能拿回托管材料。
  */
 import {
   type Address,
   type Hash,
-  type Hex,
   maxUint256,
   parseEventLogs,
   type WalletClient,
@@ -237,19 +234,17 @@ export async function txApproveMaterialsForMarketplace(
   return hash
 }
 
-// ─── Game：抽卡 commit-reveal ───────────────────────────────────
+// ─── Game：召唤 / 合成（单笔即时） ───────────────────────────────
 
 /**
- * 请求抽卡。需要先 approve ADVENT 给 Game（按当前价 × 数量预估 + 50% buffer 应对价格阶梯上涨）。
+ * 召唤：单笔交易扣 $草根社 并 mint 角色。
  *
- * @param seedCommit  keccak256(abi.encodePacked(account, salt))，由调用方提前算好
  * @param estimatedCost 当前 currentDrawPrice * count（链上 18 位精度）
  */
-export async function txRequestDraw(
+export async function txDraw(
   account: Address,
   walletClient: WalletClient,
   count: number,
-  seedCommit: Hex,
   estimatedCost: bigint,
 ): Promise<Hash> {
   const buffer = estimatedCost + estimatedCost / 2n
@@ -263,8 +258,8 @@ export async function txRequestDraw(
   const hash = await walletClient.writeContract({
     address: CONTRACTS.Game,
     abi: ABIS.Game,
-    functionName: "requestDrawWithCommit",
-    args: [BigInt(count), seedCommit],
+    functionName: "draw",
+    args: [BigInt(count)],
     chain: chain(),
     account,
   })
@@ -272,49 +267,11 @@ export async function txRequestDraw(
   return hash
 }
 
-export async function txFinalizeDraw(
-  account: Address,
-  walletClient: WalletClient,
-  salt: Hex,
-): Promise<Hash> {
-  const hash = await walletClient.writeContract({
-    address: CONTRACTS.Game,
-    abi: ABIS.Game,
-    functionName: "finalizeDrawWithSalt",
-    args: [salt],
-    chain: chain(),
-    account,
-  })
-  await waitTx(hash)
-  return hash
-}
-
-export async function txCancelDraw(
-  account: Address,
-  walletClient: WalletClient,
-): Promise<Hash> {
-  const hash = await walletClient.writeContract({
-    address: CONTRACTS.Game,
-    abi: ABIS.Game,
-    functionName: "cancelDraw",
-    args: [],
-    chain: chain(),
-    account,
-  })
-  await waitTx(hash)
-  return hash
-}
-
-// ─── Game：合成 commit-reveal ───────────────────────────────────
-
-export async function txRequestSynthesize(
+export async function txSynthesize(
   account: Address,
   walletClient: WalletClient,
   targetLevel: number,
-  seedCommit: Hex,
 ): Promise<Hash> {
-  // Materials 由 Game burn —— setApprovalForAll(Game,true)
-  // ADVENT 由 Game burn —— ERC20 approve max
   await Promise.all([
     ensureErc1155Approval(account, CONTRACTS.Game, walletClient),
     ensureErc20Allowance(
@@ -328,41 +285,8 @@ export async function txRequestSynthesize(
   const hash = await walletClient.writeContract({
     address: CONTRACTS.Game,
     abi: ABIS.Game,
-    functionName: "requestSynthesizeWithCommit",
-    args: [targetLevel, seedCommit],
-    chain: chain(),
-    account,
-  })
-  await waitTx(hash)
-  return hash
-}
-
-export async function txFinalizeSynthesize(
-  account: Address,
-  walletClient: WalletClient,
-  salt: Hex,
-): Promise<Hash> {
-  const hash = await walletClient.writeContract({
-    address: CONTRACTS.Game,
-    abi: ABIS.Game,
-    functionName: "finalizeSynthesizeWithSalt",
-    args: [salt],
-    chain: chain(),
-    account,
-  })
-  await waitTx(hash)
-  return hash
-}
-
-export async function txCancelSynthesize(
-  account: Address,
-  walletClient: WalletClient,
-): Promise<Hash> {
-  const hash = await walletClient.writeContract({
-    address: CONTRACTS.Game,
-    abi: ABIS.Game,
-    functionName: "cancelSynthesis",
-    args: [],
+    functionName: "synthesize",
+    args: [targetLevel],
     chain: chain(),
     account,
   })
@@ -473,6 +397,175 @@ export async function txChallenge(
   }
 
   return { hash, result }
+}
+
+// ─── P0 bootstrap ───────────────────────────────────────────────
+
+export async function txClaimBootstrapMaterials(
+  account: Address,
+  walletClient: WalletClient,
+): Promise<Hash> {
+  const hash = await walletClient.writeContract({
+    address: CONTRACTS.Game,
+    abi: ABIS.Game,
+    functionName: "claimBootstrapMaterials",
+    args: [],
+    chain: chain(),
+    account,
+  })
+  await waitTx(hash)
+  return hash
+}
+
+// ─── P1 unbind / replace ────────────────────────────────────────
+
+export async function txUnbindTeamCharacter(
+  account: Address,
+  walletClient: WalletClient,
+  teamIndex: number,
+  slotIndex: number,
+  unbindCost: bigint,
+): Promise<Hash> {
+  await ensureErc20Allowance(CONTRACTS.AdventToken, account, CONTRACTS.Game, unbindCost, walletClient)
+  const hash = await walletClient.writeContract({
+    address: CONTRACTS.Game,
+    abi: ABIS.Game,
+    functionName: "unbindTeamCharacter",
+    args: [BigInt(teamIndex), BigInt(slotIndex)],
+    chain: chain(),
+    account,
+  })
+  await waitTx(hash)
+  return hash
+}
+
+export async function txReplaceTeamMember(
+  account: Address,
+  walletClient: WalletClient,
+  teamIndex: number,
+  slotIndex: number,
+  newTokenId: bigint,
+): Promise<Hash> {
+  const hash = await walletClient.writeContract({
+    address: CONTRACTS.Game,
+    abi: ABIS.Game,
+    functionName: "replaceTeamMember",
+    args: [BigInt(teamIndex), BigInt(slotIndex), newTokenId],
+    chain: chain(),
+    account,
+  })
+  await waitTx(hash)
+  return hash
+}
+
+export async function txChallengeExpeditionChain(
+  account: Address,
+  walletClient: WalletClient,
+  teamIndex: number,
+  dungeonLevels: number[],
+): Promise<{ hash: Hash; result: ChallengeResult | null }> {
+  const hash = await walletClient.writeContract({
+    address: CONTRACTS.Game,
+    abi: ABIS.Game,
+    functionName: "challengeExpeditionChain",
+    args: [BigInt(teamIndex), dungeonLevels],
+    chain: chain(),
+    account,
+  })
+  const receipt = await waitTx(hash)
+
+  let result: ChallengeResult | null = null
+  try {
+    const events = parseEventLogs({
+      abi: ABIS.Game,
+      eventName: "DungeonResult",
+      logs: receipt.logs,
+    }) as readonly {
+      args: {
+        user: Address
+        dungeonLevel: bigint | number
+        success: boolean
+        successBps: bigint | number
+        teamIndex: bigint
+        ae: bigint
+        bf: bigint
+        mr: bigint
+        es: bigint
+      }
+    }[]
+    const mine = events.find(
+      (e) =>
+        e.args.user.toLowerCase() === account.toLowerCase() &&
+        Number(e.args.teamIndex) === teamIndex,
+    )
+    if (mine) {
+      result = {
+        success: mine.args.success,
+        successBps: Number(mine.args.successBps),
+        dungeonLevel: Number(mine.args.dungeonLevel),
+        teamIndex: mine.args.teamIndex,
+        ae: mine.args.ae,
+        bf: mine.args.bf,
+        mr: mine.args.mr,
+        es: mine.args.es,
+      }
+    }
+  } catch (err) {
+    console.warn("[v0] failed to parse DungeonResult (chain)", err)
+  }
+
+  return { hash, result }
+}
+
+// ─── P0/P2 GameProgress ─────────────────────────────────────────
+
+export async function txClaimDailySpecialistReward(
+  account: Address,
+  walletClient: WalletClient,
+): Promise<Hash> {
+  const hash = await walletClient.writeContract({
+    address: CONTRACTS.GameProgress,
+    abi: ABIS.GameProgress,
+    functionName: "claimDailySpecialistReward",
+    args: [],
+    chain: chain(),
+    account,
+  })
+  await waitTx(hash)
+  return hash
+}
+
+export async function txBindResonancePartner(
+  account: Address,
+  walletClient: WalletClient,
+  partner: Address,
+): Promise<Hash> {
+  const hash = await walletClient.writeContract({
+    address: CONTRACTS.GameProgress,
+    abi: ABIS.GameProgress,
+    functionName: "bindResonancePartner",
+    args: [partner],
+    chain: chain(),
+    account,
+  })
+  await waitTx(hash)
+  return hash
+}
+
+export async function txClaimResonanceReward(
+  account: Address,
+  walletClient: WalletClient,
+): Promise<Hash> {
+  const hash = await walletClient.writeContract({
+    address: CONTRACTS.GameProgress,
+    abi: ABIS.GameProgress,
+    functionName: "claimResonanceReward",
+    args: [],
+    chain: chain(),
+    account,
+  })
+  await waitTx(hash)
+  return hash
 }
 
 // ─── Marketplace ────────────────────────────────────────────────

@@ -1,14 +1,15 @@
 export const docs = {
   navAria: "文档目录",
-  flapFairLaunch: "$REBC · Flap 公平发射",
+  flapFairLaunch: "$草根社 · Flap 公平发射",
   toc: {
     intro: "游戏概述",
     downloads: "资料下载",
     highlights: "核心亮点",
+    v48: "V48 专产玩法",
     tokens: "代币与资产",
     prepare: "上线准备",
     guide: "操作指南",
-    ai: "AI · 符文妹妹",
+    ai: "AI · 草根社【丝袜妹妹】",
     faq: "常见问题",
     contracts: "合约地址",
     help: "核对信息",
@@ -25,7 +26,7 @@ export const docs = {
     title: "这是一款什么样的游戏？",
     p1a: "Rune Abyss（符文深渊）",
     p1b: "是部署在 BSC 上的 Web3 策略养成链游，核心循环：",
-    loop: "组队 → 消耗体力挑战副本 → 获得材料 →（可选）USDT 内盘调剂库存 → 消耗材料与 $REBC 合成更高稀有度角色 → 继续远征。",
+    loop: "组队 → 消耗体力挑战副本 → 获得材料 →（可选）USDT 内盘调剂库存 → 消耗材料与 $草根社 合成更高稀有度角色 → 继续远征。",
     p2a: "材料体系",
     zeroMint: "零增发",
     p2b: "：AE / BF / MR / ES 来自副本掉落或玩家市场交易，",
@@ -54,7 +55,7 @@ export const docs = {
   highlights: {
     eyebrow: "Highlights",
     title: "核心亮点",
-    flapLine: "Flap（蝴蝶平台）官网：",
+    flapLine: "Flap（蝴蝶平台）公平发射：",
     items: [
       {
         title: "链上真实资产",
@@ -62,15 +63,15 @@ export const docs = {
       },
       {
         title: "经济约束清晰",
-        desc: "$REBC 用于召唤与合成销毁；材料可通过 USDT 内盘流通，手续费规则公开透明。",
+        desc: "$草根社 用于召唤与合成销毁；材料可通过 USDT 内盘流通，手续费规则公开透明。",
       },
       {
-        title: "召唤公平性（可验证随机）",
-        desc: "召唤 / 合成为 Commit-Reveal：先提交请求，经过若干区块后再揭晓，降低单区块操控风险。",
+        title: "召唤即时结算",
+        desc: "召唤 draw / 合成 synthesize 均为单笔交易即时完成；随机由链上多源熵派生，签名前无法精确预测。",
       },
       {
         title: "合成必成",
-        desc: "满足链上公式则 100% 成功，材料与 $REBC 按规则销毁（黑洞），产出更高稀有角色。",
+        desc: "满足链上公式则 100% 成功，材料与 $草根社 按规则销毁（黑洞），产出更高稀有角色。",
       },
       {
         title: "内盘交易灵活",
@@ -82,19 +83,57 @@ export const docs = {
       },
       {
         title: "AI 游戏助手",
-        desc: "「符文妹妹」对话助手：玩法与操作指引；需连接钱包后使用（见下文说明）。",
+        desc: "「草根社【丝袜妹妹】」对话助手：玩法与操作指引；需连接钱包后使用（见下文说明）。",
       },
       {
         title: "代币公平发射",
-        desc: "$REBC 通过 Flap（蝴蝶平台）公平发射，链上规则与流通以合约及平台为准。",
+        desc: "$草根社 通过 Flap（蝴蝶平台）公平发射，链上规则与流通以合约及平台为准。",
       },
+    ] as const,
+  },
+  v48: {
+    eyebrow: "Economy",
+    title: "专产经济与进阶玩法",
+    lead: "内测版经济基线：六关专产、合成养成、仪表盘调度与 P1/P2 留存玩法。",
+    dungeonsTitle: "副本专产表",
+    tableHeaders: {
+      level: "关",
+      power: "战力",
+      role: "定位",
+      ae: "AE",
+      bf: "BF",
+      mr: "MR",
+      es: "ES",
+    },
+    dungeons: [
+      { level: "D1", power: "≥45", role: "AE 专产", ae: "30", bf: "—", mr: "—", es: "—" },
+      { level: "D2", power: "≥90", role: "BF 专产", ae: "—", bf: "23", mr: "—", es: "—" },
+      { level: "D3", power: "≥180", role: "MR 专产", ae: "—", bf: "—", mr: "11", es: "—" },
+      { level: "D4", power: "≥300", role: "ES 专产", ae: "—", bf: "—", mr: "—", es: "2" },
+      { level: "D5", power: "≥450", role: "高阶 AE/BF", ae: "42", bf: "32", mr: "—", es: "—" },
+      { level: "D6", power: "≥550", role: "混合终局", ae: "31", bf: "23", mr: "13", es: "5" },
+    ] as const,
+    dungeonNotes: [
+      "成功全额掉落；失败约 1/4 材料；失败后下次必成功。",
+      "成功率 D1 90% 递降至 D6 80%。",
+      "见习～熟练合成：D1–D4 并行；精英：D5+D3+D4；英雄传奇：D6。",
+    ] as const,
+    featuresTitle: "进阶功能",
+    features: [
+      { title: "远征仪表盘", desc: "Hub 展示材料缺口、合成进度与推荐刷关。" },
+      { title: "四专产日任务", desc: "D1–D4 各挑战 1 次 → 领取 2 体力。" },
+      { title: "职业相性", desc: "六职业 NFT；配队可在特定副本获得材料加成。" },
+      { title: "远征链", desc: "连续 3 关专产，材料 ×1.3，首步额外 2 体力。" },
+      { title: "队伍解绑", desc: "500 $草根社（销毁），无冷却限制。" },
+      { title: "好友共振", desc: "绑定伙伴，双方本周各 ≥3 次挑战 → 各领 3 体力。" },
+      { title: "赛季积分", desc: "副本成功按材料累计赛季分（非 PvP）。" },
     ] as const,
   },
   tokens: {
     eyebrow: "Assets",
     title: "代币与资产说明",
-    adventTitle: "$REBC",
-    advent1: "用于召唤与合成销毁；需按提示对 Game 合约完成 ERC20 授权（Approve）。",
+    adventTitle: "$草根社",
+    advent1: "用于召唤与合成销毁；需对 Game 代理合约完成 ERC20 授权（Approve）。",
     advent2: "总量设计约定 10 亿枚；以链上 totalSupply 为准。",
     advent3a: "公平发射：",
     advent3b: "Flap / 蝴蝶平台",
@@ -102,7 +141,7 @@ export const docs = {
     walletTitle: "USDT · 材料 · NFT",
     wallet1: "USDT：购买体力、市场买入材料；注意 Stamina / Marketplace 授权额度。",
     wallet2: "材料 AE/BF/MR/ES：副本掉落为主，也可 USDT 内盘购买。",
-    wallet3a: "召唤单价基准约 {summonBase} $REBC，每约 1000 名阶梯上调（如 +10%）；全服代币召唤上限常见展示为 {cap}（合成不计入）。",
+    wallet3a: "召唤 tier-0 锚定约 {summonUsdt} USDT/名（Pancake 储备换算为 $草根社 销毁量，以链上 currentDrawPrice 为准）；全服每 {summonStep} 名 +10%；上限 {cap}（合成不计入）。",
   },
   prepare: {
     eyebrow: "Before Start",
@@ -110,7 +149,7 @@ export const docs = {
     steps: [
       "安装支持 BSC 的钱包（MetaMask / OKX / TokenPocket 等）。",
       "切换到 BSC 主网（Chain ID 56）。",
-      "准备少量 BNB 作 Gas；玩法需要 USDT 与 $REBC。",
+      "准备少量 BNB 作 Gas；玩法需要 USDT 与 $草根社。",
       "仅通过官方域名打开游戏，谨防钓鱼。",
       "链上交易不可逆；价格波动有风险，请量力而行。",
     ] as const,
@@ -125,23 +164,23 @@ export const docs = {
       },
       {
         title: "新手礼包与体力",
-        body: "若开放新手礼包按提示领取。副本消耗体力；可用 USDT 购买（常见约 {energyPrice} USDT/点，以链上为准）。首次购买按需授权 USDT。",
+        body: "领取 5 点体力新手礼包（每钱包一次）。副本消耗体力；USDT 购买（常见约 {energyPrice} USDT/点）。",
       },
       {
         title: "符文召唤",
-        body: "召唤页检查 $REBC 与授权 → 选择 1～10 抽。Commit-Reveal：提交请求 → 等待延迟区块 → 揭晓 Finalize（或超时 Cancel）。",
+        body: "召唤页检查 $草根社 与授权 → 选择 1～10 抽 → draw(count) 单笔完成并扣款（Oracle 定价）。",
       },
       {
         title: "编成队伍",
-        body: "每队 3 名不同角色；单账号最多 8 队；每队挑战后有冷却（常见约 24h，以链上为准）。",
+        body: "每队 3 名不同角色；单账号最多 8 队；每队挑战后冷却 90 分钟（以链上为准）。",
       },
       {
         title: "挑战副本",
-        body: "选择队伍与副本等级，满足战力门槛；成功通常全额掉落，失败通常约 1/4 掉落（以实现为准）。",
+        body: "选择队伍与专产关（D1–D4 各产一种材料）；成功全额掉落，失败约 1/4；Hub 仪表盘可看缺口与推荐关。",
       },
       {
         title: "符文合成",
-        body: "选择目标稀有度，备齐材料与 $REBC；100% 成功则销毁进入黑洞。若使用 Commit-Reveal，流程同召唤。",
+        body: "选择目标稀有度，备齐材料与 $草根社 → synthesize(level) 单笔完成；100% 成功，材料与 $草根社 销毁进黑洞。",
       },
       {
         title: "内盘市场",
@@ -159,10 +198,10 @@ export const docs = {
   },
   ai: {
     eyebrow: "AI Layer",
-    title: "符文妹妹 · AI 应用层",
+    title: "草根社【丝袜妹妹】· AI 应用层",
     whatTitle: "能帮你做什么？",
     bullets: [
-      "解释菜单含义、Commit-Reveal 流程、授权按钮、材料缩写等玩法与操作。",
+      "解释菜单含义、召唤/合成单笔流程、授权按钮、材料缩写等玩法与操作。",
       "入口为界面中的聊天组件；通常需先连接钱包后再对话。",
       "可在客户端切换不同模型（名称以 UI 为准）。",
     ] as const,
@@ -176,13 +215,21 @@ export const docs = {
     title: "常见问题",
     items: [
       {
-        q: "为什么点了召唤没有立刻出结果？",
-        a: "可能为 Commit-Reveal：需在延迟区块后点击 Finalize 揭晓。",
+        q: "召唤 / 合成要等第二次签名吗？",
+        a: "不需要。draw / synthesize 均为单笔交易即时完成；交易成功后在钱包与角色列表中查看结果。",
+      },
+      {
+        q: "为什么要刷 D1–D4 而不是只刷 D6？",
+        a: "V48 专产设计：低阶合成材料来自专产关，D6 面向高阶终局。",
+      },
+      {
+        q: "新手没有 MR/ES 怎么办？",
+        a: "刷 D3（MR）/ D4（ES）专产关，或在 USDT 内盘购买；协议不发放材料礼包。",
       },
       { q: "材料会通胀吗？", a: "材料来自副本与市场，不由协议无限增发。" },
       {
-        q: "$REBC 从哪里买？",
-        a: "关注 Flap（https://flap.sh/）上公平发射与交易规则，核对官方合约地址；谨防仿冒域名。",
+        q: "$草根社 从哪里买？",
+        a: "关注 Flap 公平发射页上的交易规则，核对合约 0x45ee…8777；谨防仿冒域名。",
       },
       {
         q: "手机能玩吗？",
@@ -195,11 +242,12 @@ export const docs = {
     title: "链上合约地址",
     chainId: "Chain ID",
     rows: {
-      Game: "召唤、副本、组队、合成等核心逻辑",
+      Game: "召唤、副本、组队、合成等核心逻辑（可升级代理）",
+      GameProgress: "日任务、周共振、赛季积分、远征链状态",
       CharacterNFT: "冒险者角色 ERC721",
       Materials: "副本材料 ERC1155（AE / BF / MR / ES）",
       Marketplace: "材料 USDT 内盘挂单与成交",
-      AdventToken: "游戏代币 ERC20",
+      AdventToken: "外部游戏代币 ERC20（$草根社，Flap 公平发射）",
       USDT: "体力购买与内盘计价（BSC 常见质押 USDT）",
       Stamina: "体力合约",
       ReferralRegistry: "推荐关系绑定",

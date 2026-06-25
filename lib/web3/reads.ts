@@ -27,7 +27,7 @@ import {
 export const DEPLOY_BLOCK: bigint = (() => {
   const raw = (process.env.NEXT_PUBLIC_DEPLOY_BLOCK ?? "").trim()
   if (raw && /^\d+$/.test(raw)) return BigInt(raw)
-  return 95849570n
+  return 106289982n
 })()
 
 // ─── 全局静态参数 ────────────────────────────────────────────────
@@ -37,17 +37,52 @@ export type GameStatic = {
   baseDrawPrice: bigint
   drawPriceStep: bigint
   drawPriceStepBps: bigint
-  rngDelayBlocks: bigint
-  rngExpiryBlocks: bigint
   maxTeamsPerAccount: bigint
   teamSize: bigint
   cooldownSeconds: bigint
   newbieGift: bigint
   pricePerPoint: bigint
   feeBps: bigint
+  unbindAdventCost: bigint
+  unbindCooldownSeconds: bigint
+  expeditionChainMaterialBps: number
+  expeditionChainExtraStamina: number
+  expeditionChainSteps: number
+  /** Unix seconds; 0 = summon always open */
+  drawOpensAt: number
 }
 
 let _staticCache: GameStatic | null = null
+
+/** GameAdminConfig V48 默认值 — 旧版 Game 部署无 drawCap 等公开 getter 时回退 */
+const GAME_STATIC_DEFAULTS: GameStatic = {
+  drawCap: 6_000n,
+  baseDrawPrice: 5n * 10n ** 18n, // Oracle tier-0 回退（~3 USDT @ 0.6）；以 currentDrawPrice 为准
+  drawPriceStep: 600n,
+  drawPriceStepBps: 1_000n,
+  maxTeamsPerAccount: 8n,
+  teamSize: 3n,
+  cooldownSeconds: 5_400n,
+  newbieGift: 5n,
+  pricePerPoint: 5_000_000_000_000_000n,
+  feeBps: 500n,
+  unbindAdventCost: 500n * 10n ** 18n,
+  unbindCooldownSeconds: 0n,
+  expeditionChainMaterialBps: 13_000,
+  expeditionChainExtraStamina: 2,
+  expeditionChainSteps: 3,
+  drawOpensAt: 0,
+}
+
+function staticBigint(
+  row: { status: "success"; result: unknown } | { status: "failure"; error: unknown },
+  fallback: bigint,
+  label: string,
+): bigint {
+  if (row.status === "success") return row.result as bigint
+  console.warn(`[reads] readGameStatic: ${label} 链上不可用，使用默认值 ${fallback}`)
+  return fallback
+}
 
 export async function readGameStatic(): Promise<GameStatic> {
   if (_staticCache) return _staticCache
@@ -58,47 +93,69 @@ export async function readGameStatic(): Promise<GameStatic> {
 
   const r = await client.multicall({
     contracts: [
-      { ...game, functionName: "DRAW_CAP" },
-      { ...game, functionName: "BASE_DRAW_PRICE" },
-      { ...game, functionName: "DRAW_PRICE_STEP" },
+      { ...game, functionName: "drawCap" },
+      { ...game, functionName: "baseDrawPrice" },
+      { ...game, functionName: "drawPriceStep" },
       { ...game, functionName: "DRAW_PRICE_STEP_BPS" },
-      { ...game, functionName: "RNG_DELAY_BLOCKS" },
-      { ...game, functionName: "RNG_EXPIRY_BLOCKS" },
       { ...game, functionName: "MAX_TEAMS_PER_ACCOUNT" },
       { ...game, functionName: "TEAM_SIZE" },
       { ...game, functionName: "COOLDOWN_SECONDS" },
       { ...stamina, functionName: "NEWBIE_GIFT" },
       { ...stamina, functionName: "pricePerPoint" },
       { ...market, functionName: "FEE_BPS" },
+      { ...game, functionName: "unbindAdventCost" },
+      { ...game, functionName: "unbindCooldownSeconds" },
+      { ...game, functionName: "expeditionChainMaterialBps" },
+      { ...game, functionName: "expeditionChainExtraStamina" },
+      { ...game, functionName: "expeditionChainSteps" },
+      { ...game, functionName: "drawOpensAt" },
     ],
-    allowFailure: false,
+    // 主网旧 Game 合约（0xf34C…）无 GameAdminConfig 的 drawCap/baseDrawPrice/drawPriceStep getter
+    allowFailure: true,
   })
 
   _staticCache = {
-    drawCap: r[0] as bigint,
-    baseDrawPrice: r[1] as bigint,
-    drawPriceStep: r[2] as bigint,
-    drawPriceStepBps: r[3] as bigint,
-    rngDelayBlocks: r[4] as bigint,
-    rngExpiryBlocks: r[5] as bigint,
-    maxTeamsPerAccount: r[6] as bigint,
-    teamSize: r[7] as bigint,
-    cooldownSeconds: r[8] as bigint,
-    newbieGift: r[9] as bigint,
-    pricePerPoint: r[10] as bigint,
-    feeBps: r[11] as bigint,
+    drawCap: staticBigint(r[0], GAME_STATIC_DEFAULTS.drawCap, "drawCap"),
+    baseDrawPrice: staticBigint(r[1], GAME_STATIC_DEFAULTS.baseDrawPrice, "baseDrawPrice"),
+    drawPriceStep: staticBigint(r[2], GAME_STATIC_DEFAULTS.drawPriceStep, "drawPriceStep"),
+    drawPriceStepBps: staticBigint(r[3], GAME_STATIC_DEFAULTS.drawPriceStepBps, "DRAW_PRICE_STEP_BPS"),
+    maxTeamsPerAccount: staticBigint(
+      r[4],
+      GAME_STATIC_DEFAULTS.maxTeamsPerAccount,
+      "MAX_TEAMS_PER_ACCOUNT",
+    ),
+    teamSize: staticBigint(r[5], GAME_STATIC_DEFAULTS.teamSize, "TEAM_SIZE"),
+    cooldownSeconds: staticBigint(r[6], GAME_STATIC_DEFAULTS.cooldownSeconds, "COOLDOWN_SECONDS"),
+    newbieGift: staticBigint(r[7], GAME_STATIC_DEFAULTS.newbieGift, "NEWBIE_GIFT"),
+    pricePerPoint: staticBigint(r[8], GAME_STATIC_DEFAULTS.pricePerPoint, "pricePerPoint"),
+    feeBps: staticBigint(r[9], GAME_STATIC_DEFAULTS.feeBps, "FEE_BPS"),
+    unbindAdventCost: staticBigint(r[10], GAME_STATIC_DEFAULTS.unbindAdventCost, "unbindAdventCost"),
+    unbindCooldownSeconds: staticBigint(
+      r[11],
+      GAME_STATIC_DEFAULTS.unbindCooldownSeconds,
+      "unbindCooldownSeconds",
+    ),
+    expeditionChainMaterialBps:
+      r[12].status === "success"
+        ? Number(r[12].result)
+        : GAME_STATIC_DEFAULTS.expeditionChainMaterialBps,
+    expeditionChainExtraStamina:
+      r[13].status === "success"
+        ? Number(r[13].result)
+        : GAME_STATIC_DEFAULTS.expeditionChainExtraStamina,
+    expeditionChainSteps:
+      r[14].status === "success"
+        ? Number(r[14].result)
+        : GAME_STATIC_DEFAULTS.expeditionChainSteps,
+    drawOpensAt:
+      r[15].status === "success"
+        ? Number(r[15].result as bigint)
+        : GAME_STATIC_DEFAULTS.drawOpensAt,
   }
   return _staticCache
 }
 
 // ─── 用户实时状态（每次刷新拉一次） ─────────────────────────────
-
-export type PendingRequest = {
-  exists: boolean
-  count: number // pendingDraw count；pendingSynthesis 时是 targetLevel
-  requestBlock: bigint
-  seedCommit: `0x${string}`
-}
 
 export type ChainTeam = {
   characterIds: [bigint, bigint, bigint]
@@ -117,8 +174,6 @@ export type UserState = {
   effectiveIndirect: Address
   currentDrawPrice: bigint
   drawnCount: bigint
-  pendingDraw: PendingRequest
-  pendingSynthesis: PendingRequest
   teams: ChainTeam[]
   blockNumber: bigint
   /** ADVENT.allowance(account, Game) — UI 用以判断是否需要先弹"授权"按钮 */
@@ -129,19 +184,22 @@ export type UserState = {
   usdtAllowanceForMarketplace: bigint
   /** Materials.isApprovedForAll(account, Marketplace) — 挂单前需要授权 ERC1155 */
   materialsApprovedForMarketplace: boolean
+  claimedBootstrap: boolean
 }
 
 export async function readUserState(addr: Address): Promise<UserState> {
   const client = getPublicClient()
   const matIds = [MATERIAL_IDS.AE, MATERIAL_IDS.BF, MATERIAL_IDS.MR, MATERIAL_IDS.ES]
 
-  const [r, blockNumber] = await Promise.all([
+  const game = { address: CONTRACTS.Game, abi: ABIS.Game } as const
+
+  const [r, blockNumber, bootstrapTry] = await Promise.all([
     client.multicall({
       contracts: [
         { address: CONTRACTS.USDT, abi: ERC20_ABI, functionName: "balanceOf", args: [addr] },
         {
           address: CONTRACTS.AdventToken,
-          abi: ABIS.AdventToken,
+          abi: ERC20_ABI,
           functionName: "balanceOf",
           args: [addr],
         },
@@ -181,21 +239,9 @@ export async function readUserState(addr: Address): Promise<UserState> {
           functionName: "effectiveReferrers",
           args: [addr],
         },
-        { address: CONTRACTS.Game, abi: ABIS.Game, functionName: "currentDrawPrice" },
-        { address: CONTRACTS.Game, abi: ABIS.Game, functionName: "drawnCount" },
-        {
-          address: CONTRACTS.Game,
-          abi: ABIS.Game,
-          functionName: "pendingDraw",
-          args: [addr],
-        },
-        {
-          address: CONTRACTS.Game,
-          abi: ABIS.Game,
-          functionName: "pendingSynthesis",
-          args: [addr],
-        },
-        { address: CONTRACTS.Game, abi: ABIS.Game, functionName: "teamsOf", args: [addr] },
+        { ...game, functionName: "currentDrawPrice" },
+        { ...game, functionName: "drawnCount" },
+        { ...game, functionName: "teamsOf", args: [addr] },
         {
           address: CONTRACTS.AdventToken,
           abi: ERC20_ABI,
@@ -224,7 +270,15 @@ export async function readUserState(addr: Address): Promise<UserState> {
       allowFailure: false,
     }),
     client.getBlockNumber(),
+    // 旧版 Game 部署无 claimedBootstrap 映射 —— 单独探测，失败时视为未领取。
+    client.multicall({
+      contracts: [{ ...game, functionName: "claimedBootstrap", args: [addr] }],
+      allowFailure: true,
+    }),
   ])
+
+  const claimedBootstrap =
+    bootstrapTry[0].status === "success" ? (bootstrapTry[0].result as boolean) : false
 
   const matArr = r[4] as readonly bigint[]
   const matBalances: Record<MaterialKey, bigint> = {
@@ -234,13 +288,7 @@ export async function readUserState(addr: Address): Promise<UserState> {
     ES: matArr[3] ?? 0n,
   }
   const eff = r[7] as readonly [Address, Address]
-  // 注意：合约里 requestBlock 是 uint40 — viem 对 uintN(N<=48) 解码为 `number`（不是 bigint）。
-  // 这里统一转 bigint，避免下游和 currentBlock / staticData.rngDelayBlocks（uint256→bigint）混算时报
-  // "Cannot mix BigInt and other types"。
-  const draw = r[10] as readonly [number, number, `0x${string}`, boolean]
-  const synth = r[11] as readonly [number, number, `0x${string}`, boolean]
-  // 同样：lastChallengeAt 是 uint40 → number；这里在下方 map 时统一转 bigint
-  const teams = r[12] as readonly {
+  const teams = r[10] as readonly {
     characterIds: readonly [bigint, bigint, bigint]
     lastChallengeAt: number
   }[]
@@ -257,27 +305,16 @@ export async function readUserState(addr: Address): Promise<UserState> {
     effectiveIndirect: eff[1],
     currentDrawPrice: r[8] as bigint,
     drawnCount: r[9] as bigint,
-    pendingDraw: {
-      count: draw[0],
-      requestBlock: BigInt(draw[1]),
-      seedCommit: draw[2],
-      exists: draw[3],
-    },
-    pendingSynthesis: {
-      count: synth[0],
-      requestBlock: BigInt(synth[1]),
-      seedCommit: synth[2],
-      exists: synth[3],
-    },
     teams: teams.map((t) => ({
       characterIds: [...t.characterIds] as [bigint, bigint, bigint],
       lastChallengeAt: BigInt(t.lastChallengeAt),
     })),
     blockNumber,
-    adventAllowanceForGame: r[13] as bigint,
-    usdtAllowanceForStamina: r[14] as bigint,
-    usdtAllowanceForMarketplace: r[15] as bigint,
-    materialsApprovedForMarketplace: r[16] as boolean,
+    adventAllowanceForGame: r[11] as bigint,
+    usdtAllowanceForStamina: r[12] as bigint,
+    usdtAllowanceForMarketplace: r[13] as bigint,
+    materialsApprovedForMarketplace: r[14] as boolean,
+    claimedBootstrap,
   }
 }
 
@@ -287,6 +324,7 @@ export type ChainCharacter = {
   tokenId: bigint
   level: number
   power: number
+  classId: number
 }
 
 /**
@@ -370,7 +408,7 @@ export async function readOwnedCharacters(
   if (ownedIds.length === 0) return []
 
   // 第二步：读属性 —— 大户持有上百 NFT 时同样分段，避免 meta multicall 并行风暴
-  const metaRows: [number, number][] = []
+  const metaRows: [number, number, number][] = []
   for (let offset = 0; offset < ownedIds.length; offset += OWNER_OF_SLICE) {
     const slice = ownedIds.slice(offset, offset + OWNER_OF_SLICE)
     const part = await client.multicall({
@@ -388,18 +426,20 @@ export async function readOwnedCharacters(
       const tokenId = slice[i]!
       if (row.status !== "success" || row.result == null) {
         console.warn(
-          `[reads] characters(${tokenId}) multicall 未成功，使用 level=0 power=0`,
+          `[reads] characters(${tokenId}) multicall 未成功，使用 level=1 power=0`,
           row.status === "failure" ? row.error : row,
         )
-        metaRows.push([0, 0])
+        metaRows.push([1, 0, 0])
         continue
       }
       const r = row.result as unknown
       let level: number
       let power: number
+      let classId = 0
       if (Array.isArray(r)) {
         level = Number(r[0])
         power = Number(r[1])
+        classId = r.length > 2 ? Number(r[2]) : 0
       } else if (
         r &&
         typeof r === "object" &&
@@ -408,23 +448,25 @@ export async function readOwnedCharacters(
       ) {
         level = Number((r as { level: bigint | number }).level)
         power = Number((r as { power: bigint | number }).power)
+        classId =
+          "classId" in r ? Number((r as { classId: bigint | number }).classId) : 0
       } else {
         console.warn(`[reads] characters(${tokenId}) 未知返回值格式`, row.result)
-        metaRows.push([0, 0])
+        metaRows.push([1, 0, 0])
         continue
       }
       if (!Number.isFinite(level) || !Number.isFinite(power)) {
-        console.warn(`[reads] characters(${tokenId}) 解析异常，使用 0`, row.result)
-        metaRows.push([0, 0])
+        console.warn(`[reads] characters(${tokenId}) 解析异常，使用 level=1 power=0`, row.result)
+        metaRows.push([1, 0, 0])
         continue
       }
-      metaRows.push([level, power])
+      metaRows.push([level, power, classId])
     }
   }
 
   return ownedIds.map((tokenId, i) => {
     const tuple = metaRows[i]!
-    return { tokenId, level: tuple[0], power: tuple[1] }
+    return { tokenId, level: tuple[0], power: tuple[1], classId: tuple[2] }
   })
 }
 
@@ -947,4 +989,114 @@ export async function readPowerRange(level: number): Promise<[number, number]> {
   const range: [number, number] = [r[0], r[1]]
   _powerCache.set(level, range)
   return range
+}
+
+export type ProgressState = {
+  dailySpecialistMask: number
+  dailySpecialistClaimed: boolean
+  dailySpecialistReward: number
+  resonancePartner: Address
+  resonanceWeekChallenges: number
+  resonanceWeekClaimed: boolean
+  resonanceMinChallenges: number
+  resonanceStaminaReward: number
+  currentSeasonId: number
+  seasonScore: bigint
+  weeklyBonusDungeon: number
+  weeklyBonusMaterialId: number
+  weeklyBonusBps: number
+  weeklyBonusEndsAt: number
+  expeditionChainSteps: number
+}
+
+export type ExpeditionChainState = {
+  step: number
+  startedAt: number
+}
+
+export async function readExpeditionChainStates(
+  addr: Address,
+  teamCount: number,
+): Promise<ExpeditionChainState[]> {
+  if (CONTRACTS.GameProgress === zeroAddress || teamCount <= 0) return []
+  const client = getPublicClient()
+  const progress = { address: CONTRACTS.GameProgress, abi: ABIS.GameProgress } as const
+  const contracts = Array.from({ length: teamCount }, (_, i) => ({
+    ...progress,
+    functionName: "expeditionChains" as const,
+    args: [addr, BigInt(i)] as const,
+  }))
+  const r = await client.multicall({ contracts, allowFailure: true })
+  return r.map((row) => {
+    if (row.status !== "success") return { step: 0, startedAt: 0 }
+    const [step, startedAt] = row.result as readonly [number, number]
+    return { step: Number(step), startedAt: Number(startedAt) }
+  })
+}
+
+const MATERIAL_ID_TO_KEY: Record<number, MaterialKey> = {
+  1: "AE",
+  2: "BF",
+  3: "MR",
+  4: "ES",
+}
+
+export function materialKeyFromId(id: number): MaterialKey | null {
+  return MATERIAL_ID_TO_KEY[id] ?? null
+}
+
+export async function readProgressState(addr: Address): Promise<ProgressState | null> {
+  if (CONTRACTS.GameProgress === zeroAddress) return null
+  const client = getPublicClient()
+  const progress = { address: CONTRACTS.GameProgress, abi: ABIS.GameProgress } as const
+  const game = { address: CONTRACTS.Game, abi: ABIS.Game } as const
+
+  const r = await client.multicall({
+    contracts: [
+      { ...progress, functionName: "dailySpecialistMask", args: [addr] },
+      { ...progress, functionName: "dailySpecialistClaimed", args: [addr] },
+      { ...progress, functionName: "dailySpecialistStaminaReward" },
+      { ...progress, functionName: "resonancePartner", args: [addr] },
+      { ...progress, functionName: "resonanceWeekChallenges", args: [addr] },
+      { ...progress, functionName: "resonanceWeekClaimed", args: [addr] },
+      { ...progress, functionName: "resonanceMinChallenges" },
+      { ...progress, functionName: "resonanceStaminaReward" },
+      { ...progress, functionName: "currentSeasonId" },
+      { ...game, functionName: "weeklyBonusDungeon" },
+      { ...game, functionName: "weeklyBonusMaterialId" },
+      { ...game, functionName: "weeklyBonusBps" },
+      { ...game, functionName: "weeklyBonusEndsAt" },
+      { ...progress, functionName: "expeditionChainSteps" },
+    ],
+    allowFailure: false,
+  })
+
+  let seasonScore = 0n
+  const seasonId = Number(r[8])
+  if (seasonId > 0) {
+    seasonScore = (await client.readContract({
+      address: CONTRACTS.GameProgress,
+      abi: ABIS.GameProgress,
+      functionName: "seasonScore",
+      args: [seasonId, addr],
+    })) as bigint
+  }
+
+  return {
+    dailySpecialistMask: Number(r[0]),
+    dailySpecialistClaimed: r[1] as boolean,
+    dailySpecialistReward: Number(r[2]),
+    resonancePartner: r[3] as Address,
+    resonanceWeekChallenges: Number(r[4]),
+    resonanceWeekClaimed: r[5] as boolean,
+    resonanceMinChallenges: Number(r[6]),
+    resonanceStaminaReward: Number(r[7]),
+    currentSeasonId: seasonId,
+    seasonScore,
+    weeklyBonusDungeon: Number(r[9]),
+    weeklyBonusMaterialId: Number(r[10]),
+    weeklyBonusBps: Number(r[11]),
+    weeklyBonusEndsAt: Number(r[12]),
+    expeditionChainSteps: Number(r[13]),
+  }
 }

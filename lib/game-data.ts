@@ -1,8 +1,29 @@
-// Rune Abyss — game design constants (V46.0 spec)
+// Rune Abyss — game design constants (V48.0 spec)
 // 所有数值与系统设计文档保持一致
 
 export type RarityLevel = 1 | 2 | 3 | 4 | 5
 export type MaterialKey = "AE" | "BF" | "MR" | "ES"
+
+export type DungeonSpecialist = MaterialKey | "MIXED" | "HIGH_AB"
+
+export const DUNGEON_SPECIALIST: Record<number, DungeonSpecialist> = {
+  1: "AE",
+  2: "BF",
+  3: "MR",
+  4: "ES",
+  5: "HIGH_AB",
+  6: "MIXED",
+}
+
+export const SEVEN_DAY_ROUTE = [
+  { day: 1, title: "连接钱包", desc: "领取 5 点体力新手礼包，了解四材料专产" },
+  { day: 2, title: "首队成军", desc: "召唤或合成 3 见习，编成首队" },
+  { day: 3, title: "AE 专产", desc: "挑战 D1，熟悉材料产出" },
+  { day: 4, title: "BF 专产", desc: "解锁 D2，补齐战魂碎片" },
+  { day: 5, title: "MR/ES 专产", desc: "推进 D3 + D4 并行" },
+  { day: 6, title: "首次合成", desc: "完成见习 → 熟练合成" },
+  { day: 7, title: "周任务", desc: "完成四专产日任务，领取体力" },
+] as const
 
 export interface Rarity {
   level: RarityLevel
@@ -74,6 +95,12 @@ export const RARITY_BY_LEVEL: Record<RarityLevel, Rarity> = RARITIES.reduce(
   {} as Record<RarityLevel, Rarity>,
 )
 
+/** Coerce chain/UI rarity to 1..5 — invalid or missing levels default to 1 (见习). */
+export function normalizeRarityLevel(level: number): RarityLevel {
+  if (level >= 1 && level <= 5) return level as RarityLevel
+  return 1
+}
+
 export interface Material {
   key: MaterialKey
   name: string
@@ -124,55 +151,55 @@ export const DUNGEONS: Dungeon[] = [
   {
     level: 1,
     minPower: 45,
-    output: { AE: 38, BF: 19, MR: 0, ES: 0 },
+    output: { AE: 30, BF: 0, MR: 0, ES: 0 },
     name: "废墟祭坛",
     bossName: "锈蚀亡兵",
-    description: "符文之力初燃的旧时神殿，亡灵在此低语。",
+    description: "AE 专产关 — 符文之力初燃的旧时神殿。",
     image: "/dungeons/d1-crumbling-altar.jpg",
   },
   {
     level: 2,
-    minPower: 90,
-    output: { AE: 31, BF: 24, MR: 0, ES: 0 },
+    minPower: 75,
+    output: { AE: 0, BF: 23, MR: 0, ES: 0 },
     name: "低语洞窟",
     bossName: "符文巨怪",
-    description: "深处石壁布满古老符纹，巨怪以血祭饲养水晶。",
+    description: "BF 专产关 — 深处石壁布满古老符纹。",
     image: "/dungeons/d2-whispering-caverns.jpg",
   },
   {
     level: 3,
-    minPower: 180,
-    output: { AE: 33, BF: 51, MR: 48, ES: 14 },
+    minPower: 150,
+    output: { AE: 0, BF: 0, MR: 11, ES: 0 },
     name: "冰封圣所",
     bossName: "霜息巨人",
-    description: "永冻不化的冰柱大殿，霜息巨人以冰斧守护遗迹。",
+    description: "MR 专产关 — 永冻不化的冰柱大殿。",
     image: "/dungeons/d3-frozen-sanctum.jpg",
   },
   {
     level: 4,
     minPower: 300,
-    output: { AE: 15, BF: 30, MR: 58, ES: 29 },
+    output: { AE: 0, BF: 0, MR: 0, ES: 2 },
     name: "熔焰熔炉",
     bossName: "炎息熔魔",
-    description: "熔岩之河贯穿地心熔炉，恶魔以熔锤锻造毁灭之锋。",
+    description: "ES 专产关 — 熔岩之河贯穿地心熔炉。",
     image: "/dungeons/d4-ember-forge.jpg",
   },
   {
     level: 5,
     minPower: 450,
-    output: { AE: 17, BF: 22, MR: 82, ES: 38 },
+    output: { AE: 42, BF: 32, MR: 0, ES: 0 },
     name: "虚空大教堂",
     bossName: "亡灵主教",
-    description: "破碎的彩窗映照宇宙虚空，巫妖王在此低声咒语。",
+    description: "高阶 AE/BF 混合关 — 破碎彩窗映照虚空。",
     image: "/dungeons/d5-void-cathedral.jpg",
   },
   {
     level: 6,
     minPower: 550,
-    output: { AE: 23, BF: 16, MR: 68, ES: 65 },
+    output: { AE: 31, BF: 23, MR: 13, ES: 5 },
     name: "深渊王座",
     bossName: "深渊主宰",
-    description: "悬浮于虚无之上的王座，深渊主宰俯视一切冒险者。",
+    description: "Lv4/Lv5 混合终局关 — 悬浮于虚无之上的王座。",
     image: "/dungeons/d6-abyssal-throne.jpg",
   },
 ]
@@ -193,24 +220,26 @@ export interface SynthesisCost {
 }
 
 export const SYNTHESIS_COSTS: SynthesisCost[] = [
-  { level: 1, AE: 380, BF: 290, MR: 140, ES: 25, advent: 150 },
-  { level: 2, AE: 850, BF: 650, MR: 340, ES: 90, advent: 450 },
-  { level: 3, AE: 1780, BF: 1350, MR: 780, ES: 230, advent: 1125 },
-  { level: 4, AE: 3780, BF: 2850, MR: 1620, ES: 580, advent: 2250 },
-  { level: 5, AE: 7950, BF: 5920, MR: 3350, ES: 1300, advent: 4500 },
+  { level: 1, AE: 380, BF: 290, MR: 140, ES: 25, advent: 200 },
+  { level: 2, AE: 850, BF: 650, MR: 340, ES: 90, advent: 600 },
+  { level: 3, AE: 1780, BF: 1350, MR: 780, ES: 230, advent: 1500 },
+  { level: 4, AE: 3780, BF: 2850, MR: 1620, ES: 580, advent: 3000 },
+  { level: 5, AE: 7950, BF: 5920, MR: 3350, ES: 1300, advent: 6000 },
 ]
 
-// 经济参数
-export const SUMMON_BASE_COST = 50_000
-export const SUMMON_TIER_SIZE = 1_000
+// 经济参数（链上：baseDrawUsdtPrice=3 USDT，cachedDrawPriceInAdvent 每 30s 从 Pancake 刷新）
+export const SUMMON_BASE_USDT = 3
+export const SUMMON_TIER_SIZE = 600
 export const SUMMON_TIER_INCREASE = 0.1 // +10%
+/** @deprecated 仅文档/旧文案回退；实际价格以链上 currentDrawPrice 为准 */
+export const SUMMON_BASE_COST = 50_000
 export const TOTAL_CHAR_CAP = 6_000
 
 export const ENERGY_PRICE_USDT = 0.5
 export const NEW_PLAYER_ENERGY = 5
 
 export const MAX_TEAMS_PER_ACCOUNT = 8
-export const TEAM_COOLDOWN_HOURS = 24
+export const TEAM_COOLDOWN_MINUTES = 90
 
 export const MARKET_FEE = 0.05
 export const REFERRAL_DIRECT = 0.10
@@ -270,6 +299,18 @@ export function summonCapPhaseProgress(
   }
 }
 
+/** 当前阶段累计 / 阶段总 $草根社 消耗（本阶段名额 × 单价） */
+export function summonPhaseCostTotals(
+  phaseFilled: number,
+  phaseSize: number,
+  unitPrice: number,
+): { spent: number; total: number } {
+  return {
+    spent: phaseFilled * unitPrice,
+    total: phaseSize * unitPrice,
+  }
+}
+
 /** 按概率随机一个稀有度等级 */
 export function rollRarity(): RarityLevel {
   const roll = Math.random()
@@ -296,3 +337,43 @@ export const CLASS_NAMES = [
   "炎息术士",
 ] as const
 export type CharacterClass = (typeof CLASS_NAMES)[number]
+
+export type Inventory = Record<MaterialKey, number>
+
+/** 合成目标缺口与推荐刷关（V48 专产逻辑） */
+export function synthesisProgress(
+  inventory: Inventory,
+  targetLevel: RarityLevel,
+): {
+  cost: SynthesisCost
+  missing: Record<MaterialKey, number>
+  pct: number
+  recommendDungeons: number[]
+} {
+  const cost = SYNTHESIS_COSTS.find((c) => c.level === targetLevel)!
+  const missing = {} as Record<MaterialKey, number>
+  let haveTotal = 0
+  let needTotal = 0
+  for (const k of MATERIAL_KEYS) {
+    const need = cost[k]
+    const have = inventory[k]
+    missing[k] = Math.max(0, need - have)
+    haveTotal += Math.min(have, need)
+    needTotal += need
+  }
+  const pct = needTotal > 0 ? Math.min(100, (haveTotal / needTotal) * 100) : 0
+  const recommendDungeons: number[] = []
+  if (missing.AE > 0 || missing.BF > 0) recommendDungeons.push(missing.BF >= missing.AE ? 2 : 1)
+  if (missing.MR > 0) recommendDungeons.push(3)
+  if (missing.ES > 0) recommendDungeons.push(4)
+  if (targetLevel >= 3 && (missing.AE > 0 || missing.BF > 0)) recommendDungeons.push(5)
+  if (targetLevel >= 4) recommendDungeons.push(6)
+  return { cost, missing, pct, recommendDungeons: [...new Set(recommendDungeons)] }
+}
+
+/** 估算还需多少次成功挑战才能凑齐某材料 */
+export function runsNeededForMaterial(dungeonLevel: number, material: MaterialKey, amount: number): number {
+  const d = DUNGEONS.find((x) => x.level === dungeonLevel)
+  if (!d || d.output[material] <= 0 || amount <= 0) return 0
+  return Math.ceil(amount / d.output[material])
+}

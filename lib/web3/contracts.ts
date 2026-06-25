@@ -11,8 +11,8 @@
 import type { Abi, Address } from "viem"
 
 import gameAbi from "@/lib/abi/game.json"
+import gameProgressAbi from "@/lib/abi/game-progress.json"
 import staminaAbi from "@/lib/abi/stamina.json"
-import adventAbi from "@/lib/abi/advent-token.json"
 import materialsAbi from "@/lib/abi/materials.json"
 import characterNftAbi from "@/lib/abi/character-nft.json"
 import referralAbi from "@/lib/abi/referral-registry.json"
@@ -33,35 +33,42 @@ function envAddr(envValue: string | undefined, fallback: Address): Address {
   return ((envValue ?? "").trim() || fallback) as Address
 }
 
+/** $草根社 代币合约（Flap 公平发射 · BSC 主网） */
+const DEFAULT_ADVENT_TOKEN: Address = "0x45ee0ca7470076a45618b85f09a40c4135087777"
+
 /** 合约地址 */
 export const CONTRACTS = {
   ReferralRegistry: envAddr(
     process.env.NEXT_PUBLIC_REFERRAL_REGISTRY_ADDRESS,
-    "0x9DC2C0fab8D0312c0ffb6d5275b0db48a11557df",
+    "0xE15ff182bBB063D5b6a9264F0b3631e7fE3607E4",
   ),
   Stamina: envAddr(
     process.env.NEXT_PUBLIC_STAMINA_ADDRESS,
-    "0xEdDe1C8Be5a22042904411aC42D2a3914Bd4E2F6",
+    "0xa5fC33Cf3cE04DafA073cE929926b324f09a0978",
   ),
   AdventToken: envAddr(
     process.env.NEXT_PUBLIC_ADVENT_ADDRESS,
-    "0x5E7E9E65FC1C8A92af104100B35B2ABF7C41A1c4",
+    DEFAULT_ADVENT_TOKEN,
   ),
   Materials: envAddr(
     process.env.NEXT_PUBLIC_MATERIALS_ADDRESS,
-    "0xa398AE7E9546feDa47Cef042cFfeA5a173AAaeB8",
+    "0x300Bf0aD917e4516B04A0F0B37F183D8Ed3d7685",
   ),
   CharacterNFT: envAddr(
     process.env.NEXT_PUBLIC_CHARACTER_NFT_ADDRESS,
-    "0x2D81F99Dd0a4c72f5b3DbB3C556f601a00F666f8",
+    "0xFeD3B521024Ad31496Fa6eB0a971F8179d495536",
   ),
   Game: envAddr(
     process.env.NEXT_PUBLIC_GAME_ADDRESS,
-    "0xf34C786BdEF2839282b25aaB9f1207114203AD6b",
+    "0x53f5a0177594700b7Fd52cAE6f8985edE3C817CA",
+  ),
+  GameProgress: envAddr(
+    process.env.NEXT_PUBLIC_GAME_PROGRESS_ADDRESS,
+    "0x71d625a9bD5A3cD5B4392eCD85a3632d9CAD9B85",
   ),
   Marketplace: envAddr(
     process.env.NEXT_PUBLIC_MARKETPLACE_ADDRESS,
-    "0x4e0134b26Ab08C21641CE1073c19Bc53c0f8C011",
+    "0xCC9328D5C795aE4Fe95bd84DD21374c0ef20c1fC",
   ),
   USDT: envAddr(
     process.env.NEXT_PUBLIC_USDT_ADDRESS,
@@ -119,8 +126,9 @@ export const ERC20_ABI = [
 /** 各业务合约 ABI（来自 Hardhat artifact，已纳入 lib/abi/*.json） */
 export const ABIS = {
   Game: gameAbi as Abi,
+  GameProgress: gameProgressAbi as Abi,
   Stamina: staminaAbi as Abi,
-  AdventToken: adventAbi as Abi,
+  GameToken: ERC20_ABI,
   Materials: materialsAbi as Abi,
   CharacterNFT: characterNftAbi as Abi,
   ReferralRegistry: referralAbi as Abi,
@@ -146,6 +154,9 @@ export type MaterialKey = (typeof MATERIAL_KEY_LIST)[number]
  *   - 所有 balanceOfBatch / synthesisCost 返回的数值除以 10 才是用户看到的整数
  */
 export const MATERIAL_UNIT = 10n
+
+/** $草根社 Flap 公平发射页（BSC） */
+export const FLAP_FAIR_LAUNCH_URL = `https://flap.sh/bnb/${CONTRACTS.AdventToken}`
 
 /** 浏览器跳转助手 */
 export const explorer = {

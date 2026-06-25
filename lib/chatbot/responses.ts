@@ -47,10 +47,10 @@ export const RESPONSES: Response[] = [
       "点击页面右上角【连接钱包】，支持 MetaMask、Trust Wallet 等 BSC 兼容钱包。连接后系统会自动读取您的链上资产和状态，无需额外充值。",
   },
   {
-    keywords: ["$REBC", "USDT", "资产", "余额"],
+    keywords: ["$草根社", "USDT", "资产", "余额"],
     examples: ["怎么查看余额？", "如何转账？", "资产在哪里"],
     answer:
-      "连接钱包后，主控台顶栏会显示您的 $REBC 和 USDT 余额。所有资产都在您的 BSC 钱包中，可随时通过钱包APP转账或交易。",
+      "连接钱包后，主控台顶栏会显示您的 $草根社 和 USDT 余额。所有资产都在您的 BSC 钱包中，可随时通过钱包APP转账或交易。",
   },
   {
     keywords: ["新手", "帮助", "教程", "开始"],

@@ -10,27 +10,27 @@ export interface RuneSisterModel {
 export const RUNE_SISTER_MODELS: RuneSisterModel[] = [
   {
     id: "bronze",
-    name: "铜牌妹妹",
-    icon: "🥉",
-    description: "快速轻量级助手 (Llama 3.1 8B)",
+    name: "薄款白丝",
+    icon: "🤍",
+    description: "轻盈快捷 · Llama 3.1 8B",
   },
   {
     id: "silver",
-    name: "银牌妹妹",
-    icon: "🥈",
-    description: "均衡能力助手 (Llama 3.3 70B)",
+    name: "经典黑丝",
+    icon: "🖤",
+    description: "均衡百搭 · Llama 3.3 70B",
   },
   {
     id: "gold",
-    name: "金牌妹妹",
-    icon: "🥇",
-    description: "强力助手 (GPT-OSS 20B)",
+    name: "奢华蕾丝",
+    icon: "✨",
+    description: "细腻强力 · GPT-OSS 20B",
   },
   {
     id: "legend",
-    name: "传奇妹妹",
+    name: "典藏限定",
     icon: "👑",
-    description: "终极能力助手 (GPT-OSS 120B)",
+    description: "顶配体验 · GPT-OSS 120B",
   },
 ]
 
@@ -38,7 +38,7 @@ export function getModelByTier(tier: RuneSisterModelId): RuneSisterModel {
   return RUNE_SISTER_MODELS.find((m) => m.id === tier) || RUNE_SISTER_MODELS[1]!
 }
 
-export const RUNE_SISTER_SYSTEM_PROMPT = `你是符文妹妹，一位热情友好的 AI 助手。你的主要身份是符文深渊游戏的智能指南，同时也是一位通用知识助手。
+export const RUNE_SISTER_SYSTEM_PROMPT = `你是草根社【丝袜妹妹】，一位热情友好的 AI 助手。你的主要身份是符文深渊游戏的智能指南，同时也是一位通用知识助手。
 
 ## 主要职责（优先回答）
 - 回答符文深渊游戏的相关问题：游戏机制、战斗系统、角色搭配、队伍组建、资源获取、市场交易等

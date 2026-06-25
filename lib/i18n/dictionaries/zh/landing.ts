@@ -2,10 +2,10 @@ export const landing = {
   heroBadge: "BSC · Chain ID 56 · 公平发射",
   heroSubtitle: "符 文 深 渊",
   heroLead:
-    "零通胀链游 · 3 角色组队 · 每日挑战副本产出材料 · 纯 USDT 内盘流通 · 纯材料合成稀有冒险者。代币 $REBC，总量 10 亿，公平发射。",
-  rebcMintCta: "REBC铸造",
+    "零通胀链游 · 3 角色组队 · 每日挑战副本产出材料 · 纯 USDT 内盘流通 · 纯材料合成稀有冒险者。代币 $草根社，总量 10 亿，公平发射。",
+  rebcMintCta: "草根社铸造",
   stats: {
-    supply: { k: "代币总量", v: "10 亿", sub: "$REBC" },
+    supply: { k: "代币总量", v: "10 亿", sub: "$草根社" },
     cap: { k: "角色上限", v: "{cap}", sub: "全服稀缺" },
     energy: { k: "体力价格", v: "{price} U", sub: "新手可领 5 点" },
     dungeons: { k: "副本等级", v: "{n} 阶", sub: "战力门槛递增" },
@@ -20,11 +20,11 @@ export const landing = {
   features: [
     {
       title: "符文召唤",
-      desc: "初始 {summonCost} $REBC 抽角色，每 1000 个 +10%，全服上限 {cap}。",
+      desc: "tier-0 锚定 {summonUsdt} USDT/名（Oracle 换算 $草根社），每 {summonStep} 名 +10%，上限 {cap}。",
     },
     {
       title: "队伍编成",
-      desc: "3 角色组队，单账号最多 8 队，每队独立 24h 冷却。",
+      desc: "3 角色组队，单账号最多 8 队，每队独立 90 分钟冷却。",
     },
     {
       title: "副本远征",
@@ -32,7 +32,7 @@ export const landing = {
     },
     {
       title: "符文合成",
-      desc: "100% 成功率，材料 + $REBC 进入黑洞，铸造更稀有的冒险者。",
+      desc: "100% 成功率，材料 + $草根社 进入黑洞，铸造更稀有的冒险者。",
     },
     {
       title: "内盘交易",
