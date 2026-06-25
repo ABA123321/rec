@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Rune Abyss · 玩法机制与收益海报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0d12;
+      --fg: #f4f1ea;
+      --primary: #d4af37;
+      --pg: rgba(212, 175, 55, 0.5);
+      --accent: #2ec4b8;
+      --ag: rgba(46, 196, 184, 0.45);
+      --muted: #9aa3b2;
+      --border: rgba(255, 255, 255, 0.12);
+      --card: rgba(20, 24, 32, 0.88);
+      --ae: #818cf8;
+      --bf: #f87171;
+      --mr: #22d3ee;
+      --es: #c084fc;
+      --gain: #34d399;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 1080px; height: 1920px;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-sans-serif, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+    .poster {
+      width: 1080px; height: 1920px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .bg { position: absolute; inset: 0; z-index: 0; }
+    .bg-img {
+      position: absolute; inset: 0;
+      background: url("/dungeons/d6-abyssal-throne.jpg") center / cover no-repeat;
+      opacity: 0.2;
+    }
+    .bg-hero {
+      position: absolute; inset: 0;
+      background: url("/hero-rune-abyss.jpg") center / cover no-repeat;
+      opacity: 0.14;
+    }
+    .bg-grad {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, rgba(10,13,18,0.5) 0%, rgba(10,13,18,0.88) 60%, var(--bg) 100%);
+    }
+    .bg-pattern {
+      position: absolute; inset: -10%;
+      background: url("/rune-pattern.jpg") center / 90% no-repeat;
+      opacity: 0.08; mix-blend-mode: screen;
+    }
+    .vignette {
+      position: absolute; inset: 0; z-index: 1;
+      box-shadow: inset 0 0 100px rgba(0,0,0,0.6);
+      pointer-events: none;
+    }
+
+    .content {
+      position: relative; z-index: 2;
+      flex: 1; min-height: 0;
+      padding: 32px 36px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* ── Header ── */
+    .head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .head-text .en {
+      font-family: Cinzel, serif;
+      font-size: 26px; font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--primary);
+      text-shadow: 0 0 16px var(--pg);
+    }
+    .head-text .zh {
+      font-size: 30px; font-weight: 600;
+      letter-spacing: 0.4em; margin-top: 2px;
+    }
+    .hero-title {
+      font-size: 40px; font-weight: 800;
+      line-height: 1.22; letter-spacing: 0.04em;
+    }
+    .hero-title .g { color: var(--primary); }
+    .hero-title .c { color: var(--accent); }
+    .hero-sub {
+      font-size: 17px; line-height: 1.55;
+      color: var(--muted);
+    }
+
+    /* ── Loop flow ── */
+    .loop {
+      display: flex;
+      align-items: stretch;
+      gap: 4px;
+      padding: 12px 10px;
+      border-radius: 14px;
+      border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
+      background: var(--card);
+    }
+    .loop-step {
+      flex: 1;
+      text-align: center;
+      position: relative;
+    }
+    .loop-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -8px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--primary);
+      font-size: 14px; font-weight: 700;
+      z-index: 2;
+    }
+    .loop-step .num {
+      width: 22px; height: 22px;
+      margin: 0 auto 6px;
+      border-radius: 50%;
+      background: color-mix(in oklab, var(--primary) 20%, transparent);
+      border: 1px solid color-mix(in oklab, var(--primary) 45%, transparent);
+      font-size: 11px; font-weight: 800;
+      line-height: 20px;
+      color: var(--primary);
+    }
+    .loop-step .txt {
+      font-size: 12px; font-weight: 700;
+      line-height: 1.35;
+      color: color-mix(in oklab, var(--fg) 88%, transparent);
+    }
+
+    /* ── Dungeon × Material strip ── */
+    .sec-label {
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .sec-label span { color: var(--primary); font-weight: 800; }
+    .dungeons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .d-cell {
+      position: relative;
+      height: 132px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .d-cell img { width: 100%; height: 100%; object-fit: cover; }
+    .d-cell .ov {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(10,13,18,0.95) 0%, transparent 65%);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .d-cell .lv {
+      font-family: ui-monospace, monospace;
+      font-size: 10px; font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+    .d-cell.d1 .lv { color: var(--ae); }
+    .d-cell.d2 .lv { color: var(--bf); }
+    .d-cell.d3 .lv { color: var(--mr); }
+    .d-cell.d4 .lv { color: var(--es); }
+    .d-cell .nm { font-size: 13px; font-weight: 800; margin: 2px 0; }
+    .d-cell .drop {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 800;
+    }
+    .d-cell .drop img {
+      width: 20px; height: 20px;
+      border-radius: 4px; object-fit: cover;
+    }
+
+    /* ── Two columns: 机制 | 收益 ── */
+    .dual {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
+    }
+    .panel {
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+    }
+    .panel.mechanics {
+      border-color: color-mix(in oklab, var(--accent) 35%, transparent);
+      box-shadow: inset 0 0 40px rgba(46, 196, 184, 0.06);
+    }
+    .panel.rewards {
+      border-color: color-mix(in oklab, var(--gain) 35%, transparent);
+      box-shadow: inset 0 0 40px rgba(52, 211, 153, 0.06);
+    }
+    .panel-h {
+      font-size: 16px; font-weight: 800;
+      letter-spacing: 0.12em;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel.mechanics .panel-h { color: var(--accent); }
+    .panel.rewards .panel-h { color: var(--gain); }
+
+    .rule {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .rule .ico {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid var(--border);
+    }
+    .rule .body { flex: 1; min-width: 0; }
+    .rule .t {
+      font-size: 13px; font-weight: 800;
+      line-height: 1.35;
+      margin-bottom: 2px;
+    }
+    .rule .d {
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .rule .d em {
+      font-style: normal;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .gain-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(52, 211, 153, 0.06);
+      border: 1px solid rgba(52, 211, 153, 0.18);
+    }
+    .gain-row .val {
+      flex-shrink: 0;
+      min-width: 52px;
+      text-align: center;
+      font-family: Cinzel, serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gain);
+    }
+    .gain-row .info .t { font-size: 13px; font-weight: 800; line-height: 1.3; }
+    .gain-row .info .d { font-size: 11px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
+
+    /* ── Synthesis outcome band ── */
+    .outcome {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
+      background: linear-gradient(90deg, rgba(212,175,55,0.08), rgba(46,196,184,0.06));
+    }
+    .outcome-side { text-align: center; }
+    .outcome-side .label {
+      font-size: 10px; letter-spacing: 0.2em;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    .mats-row {
+      display: flex; justify-content: center; gap: 4px;
+    }
+    .mats-row img {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      object-fit: cover;
+    }
+    .outcome-mid {
+      text-align: center;
+      padding: 0 6px;
+    }
+    .outcome-mid .arrow {
+      font-family: Cinzel, serif;
+      font-size: 28px;
+      color: var(--primary);
+      text-shadow: 0 0 12px var(--pg);
+    }
+    .outcome-mid .tag {
+      font-size: 11px; font-weight: 800;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      margin-top: 4px;
+    }
+    .char-result {
+      width: 72px; height: 90px;
+      margin: 0 auto;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 20px var(--pg);
+    }
+    .char-result img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .rarity-ladder {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .rarity-ladder span {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .rarity-ladder span.on {
+      color: var(--primary);
+      border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+      background: color-mix(in oklab, var(--primary) 10%, transparent);
+    }
+
+    /* ── High dungeons + extras ── */
+    .extras {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .extra {
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .extra .et { font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .extra .ed { font-size: 11px; line-height: 1.4; color: var(--muted); }
+
+    .footer {
+      flex-shrink: 0;
+      padding: 16px 36px 28px;
+      border-top: 1px solid var(--border);
+      background: linear-gradient(0deg, rgba(0,0,0,0.5), transparent);
+      position: relative; z-index: 2;
+    }
+    .cta {
+      text-align: center;
+      font-family: Cinzel, serif;
+      font-size: 26px; font-weight: 700;
+      letter-spacing: 0.22em;
+      color: var(--primary);
+      text-shadow: 0 0 16px var(--pg);
+    }
+    .cta-sub {
+      text-align: center;
+      font-size: 14px;
+      color: var(--accent);
+      margin: 4px 0 8px;
+    }
+    .dis {
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="bg" aria-hidden="true">
+      <div class="bg-img"></div>
+      <div class="bg-hero"></div>
+      <div class="bg-grad"></div>
+      <div class="bg-pattern"></div>
+    </div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <div class="content">
+      <div class="head">
+        <svg viewBox="0 0 64 64" width="48" height="48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f5d28a" />
+              <stop offset="100%" stop-color="#7a4f12" />
+            </linearGradient>
+          </defs>
+          <circle cx="32" cy="32" r="30" fill="url(#g)" />
+          <g stroke="#0a0d12" stroke-width="3.5" stroke-linecap="round" fill="none">
+            <path d="M19 46 L32 17 L45 46" /><path d="M25 36 L39 36" />
+          </g>
+        </svg>
+        <div class="head-text">
+          <p class="en">RUNE ABYSS</p>
+          <p class="zh">符 文 深 渊</p>
+        </div>
+      </div>
+
+      <h1 class="hero-title">
+        <span class="g">玩副本</span> · <span class="c">拿材料</span><br />
+        升角色 · 链上成长
+      </h1>
+      <p class="hero-sub">BSC 策略链游 · V48 专产经济 · 规则写进合约 · 钱包即账号</p>
+
+      <!-- 玩法循环 -->
+      <div class="loop" aria-label="核心玩法循环">
+        <div class="loop-step"><div class="num">1</div><div class="txt">连接<br/>钱包</div></div>
+        <div class="loop-step"><div class="num">2</div><div class="txt">3人<br/>组队</div></div>
+        <div class="loop-step"><div class="num">3</div><div class="txt">挑战<br/>专产关</div></div>
+        <div class="loop-step"><div class="num">4</div><div class="txt">掉落<br/>材料</div></div>
+        <div class="loop-step"><div class="num">5</div><div class="txt">100%<br/>合成</div></div>
+        <div class="loop-step"><div class="num">6</div><div class="txt">解锁<br/>更深关</div></div>
+      </div>
+
+      <!-- 副本 × 材料 -->
+      <div>
+        <p class="sec-label"><span>专产副本</span> · 场景 × 材料掉落（成功全额）</p>
+        <div class="dungeons">
+          <div class="d-cell d1">
+            <img src="/dungeons/d1-crumbling-altar.jpg" alt="" />
+            <div class="ov">
+              <span class="lv">D1 ≥45</span>
+              <span class="nm">废墟祭坛</span>
+              <span class="drop"><img src="/materials/ae-arcane-essence.jpg" alt="" />+30 AE</span>
+            </div>
+          </div>
+          <div class="d-cell d2">
+            <img src="/dungeons/d2-whispering-caverns.jpg" alt="" />
+            <div class="ov">
+              <span class="lv">D2 ≥75</span>
+              <span class="nm">低语洞窟</span>
+              <span class="drop"><img src="/materials/bf-blood-fragment.jpg" alt="" />+23 BF</span>
+            </div>
+          </div>
+          <div class="d-cell d3">
+            <img src="/dungeons/d3-frozen-sanctum.jpg" alt="" />
+            <div class="ov">
+              <span class="lv">D3 ≥150</span>
+              <span class="nm">冰封圣所</span>
+              <span class="drop"><img src="/materials/mr-moon-rune.jpg" alt="" />+11 MR</span>
+            </div>
+          </div>
+          <div class="d-cell d4">
+            <img src="/dungeons/d4-ember-forge.jpg" alt="" />
+            <div class="ov">
+              <span class="lv">D4 ≥300</span>
+              <span class="nm">熔焰熔炉</span>
+              <span class="drop"><img src="/materials/es-eldritch-shard.jpg" alt="" />+2 ES</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 机制 + 收益 双栏 -->
+      <div class="dual">
+        <div class="panel mechanics">
+          <div class="panel-h">⚙ 核心机制</div>
+          <div class="rule">
+            <div class="ico">⚔</div>
+            <div class="body">
+              <div class="t">3 人编队 · 8 队并行</div>
+              <div class="d">每队独立 <em>90 分钟</em> 冷却；战力之和决定可进副本</div>
+            </div>
+          </div>
+          <div class="rule">
+            <div class="ico">🎲</div>
+            <div class="body">
+              <div class="t">胜负掉落 · 链上结算</div>
+              <div class="d">成功 <em>100%</em> 材料；失败仍得 <em>1/4</em>；D1 90%→D6 80% 成功率</div>
+            </div>
+          </div>
+          <div class="rule">
+            <div class="ico">🛡</div>
+            <div class="body">
+              <div class="t">防连跪保底</div>
+              <div class="d">同队同关失败后，<em>下次必成功</em></div>
+            </div>
+          </div>
+          <div class="rule">
+            <div class="ico">⚗</div>
+            <div class="body">
+              <div class="t">100% 确定性合成</div>
+              <div class="d">材料 + $草根社 → 高阶 NFT；<em>全部销毁通缩</em></div>
+            </div>
+          </div>
+          <div class="rule">
+            <div class="ico">🔗</div>
+            <div class="body">
+              <div class="t">远征链 · 职业相性</div>
+              <div class="d">连续 3 关材料 <em>×1.3</em>；6 职业配队加成掉落</div>
+            </div>
+          </div>
+          <div class="rule">
+            <div class="ico">◆</div>
+            <div class="body">
+              <div class="t">材料零协议增发</div>
+              <div class="d">AE/BF/MR/ES 仅副本 + 内盘；<em>协议不印钞</em></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel rewards">
+          <div class="panel-h">★ 玩家收益</div>
+          <div class="gain-row">
+            <div class="val">+5</div>
+            <div class="info">
+              <div class="t">新手体力礼包</div>
+              <div class="d">每钱包一次，立刻开刷 D1 专产</div>
+            </div>
+          </div>
+          <div class="gain-row">
+            <div class="val">+2</div>
+            <div class="info">
+              <div class="t">四专产日任务</div>
+              <div class="d">D1–D4 各挑战 ≥1 次，领额外体力</div>
+            </div>
+          </div>
+          <div class="gain-row">
+            <div class="val">×1.3</div>
+            <div class="info">
+              <div class="t">远征链加成</div>
+              <div class="d">同队连打 3 关，材料产出放大</div>
+            </div>
+          </div>
+          <div class="gain-row">
+            <div class="val">+3</div>
+            <div class="info">
+              <div class="t">好友共振奖励</div>
+              <div class="d">双向绑定，双方本周各 ≥3 次挑战</div>
+            </div>
+          </div>
+          <div class="gain-row">
+            <div class="val">NFT</div>
+            <div class="info">
+              <div class="t">角色资产升值路径</div>
+              <div class="d">见习→传奇，战力 15→199，链上 NFT 确权</div>
+            </div>
+          </div>
+          <div class="gain-row">
+            <div class="val">U</div>
+            <div class="info">
+              <div class="t">USDT 内盘流通</div>
+              <div class="d">材料挂单买卖，缺口可市场调剂</div>
+            </div>
+          </div>
+          <div class="gain-row">
+            <div class="val">10%</div>
+            <div class="info">
+              <div class="t">推荐分成</div>
+              <div class="d">直推 10% · 间推 5%（市场手续费池）</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 合成产出可视化 -->
+      <div class="outcome">
+        <div class="outcome-side">
+          <div class="label">投入 · 四类材料</div>
+          <div class="mats-row">
+            <img src="/materials/ae-arcane-essence.jpg" alt="" />
+            <img src="/materials/bf-blood-fragment.jpg" alt="" />
+            <img src="/materials/mr-moon-rune.jpg" alt="" />
+            <img src="/materials/es-eldritch-shard.jpg" alt="" />
+          </div>
+          <div class="rarity-ladder">
+            <span>见习</span><span>熟练</span><span>精英</span><span>英雄</span><span class="on">传奇</span>
+          </div>
+        </div>
+        <div class="outcome-mid">
+          <div class="arrow">⇒</div>
+          <div class="tag">100% 合成</div>
+        </div>
+        <div class="outcome-side">
+          <div class="label">产出 · 高阶角色</div>
+          <div class="char-result"><img src="/characters/r5-legendary.jpg" alt="" /></div>
+          <div class="rarity-ladder">
+            <span>D5 ≥450</span><span class="on">D6 ≥550 终局</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 高阶关 + 补充 -->
+      <div class="extras">
+        <div class="extra">
+          <div class="et">D5 虚空大教堂</div>
+          <div class="ed">≥450 战力<br/>AE+BF 高阶混合</div>
+        </div>
+        <div class="extra">
+          <div class="et">D6 深渊王座</div>
+          <div class="ed">≥550 战力<br/>四维终局混合掉落</div>
+        </div>
+        <div class="extra">
+          <div class="et">赛季积分榜</div>
+          <div class="ed">副本成功按材料<br/>累计赛季排名</div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p class="cta">RUNEAS.XYZ</p>
+      <p class="cta-sub">三人远征 · 专产刷料 · 链上可查 · 以链上参数为准</p>
+      <p class="dis">不构成投资建议 · 代币与 NFT 有风险 · 链上操作不可逆 · BNB Smart Chain</p>
+    </footer>
+  </div>
+</body>
+</html>

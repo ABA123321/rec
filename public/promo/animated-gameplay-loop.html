@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Rune Abyss · 玩法循环动画宣发</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #12161c;
+      --foreground: #f4f1ea;
+      --card: rgba(28, 32, 42, 0.78);
+      --border: rgba(255, 255, 255, 0.12);
+      --primary: #d4af37;
+      --primary-glow: rgba(212, 175, 55, 0.55);
+      --accent: #2ec4b8;
+      --accent-glow: rgba(46, 196, 184, 0.5);
+      --muted: #9aa3b2;
+      --loop-duration: 18s;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--foreground);
+      font-family: ui-sans-serif, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    .poster {
+      width: 1080px;
+      height: 1920px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Background ── */
+    .bg { position: absolute; inset: 0; z-index: 0; }
+    .bg-hero {
+      position: absolute; inset: 0;
+      background: url("/hero-rune-abyss.jpg") center / cover no-repeat;
+      opacity: 0.38;
+    }
+    .bg-site {
+      position: absolute; inset: 0;
+      background: url("/site-bg-abyss.jpg") center / cover no-repeat;
+      opacity: 0.18;
+    }
+    .bg-grad {
+      position: absolute; inset: 0;
+      background: linear-gradient(
+        to bottom,
+        color-mix(in oklab, var(--bg) 35%, transparent) 0%,
+        color-mix(in oklab, var(--bg) 65%, transparent) 50%,
+        var(--bg) 100%
+      );
+    }
+    .bg-pattern {
+      position: absolute; inset: -25%;
+      background: url("/rune-pattern.jpg") center / 110% no-repeat;
+      opacity: 0.12;
+      mix-blend-mode: screen;
+      animation: spin-slow 90s linear infinite;
+    }
+    .bg-sigil {
+      position: absolute; left: 50%; top: 38%;
+      transform: translate(-50%, -50%);
+      width: 88%; height: 48%;
+      background: url("/rune-sigil.png") center / contain no-repeat;
+      opacity: 0.07;
+      animation: sigil-pulse 4s ease-in-out infinite;
+    }
+    .vignette {
+      position: absolute; inset: 0;
+      box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.6);
+      pointer-events: none; z-index: 1;
+    }
+
+    /* Floating particles */
+    .particles { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+    .particle {
+      position: absolute;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      animation: float-up var(--dur, 6s) ease-in-out infinite;
+      animation-delay: var(--delay, 0s);
+      opacity: 0;
+    }
+
+    .content {
+      position: relative; z-index: 2;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 44px 0;
+      min-height: 0;
+    }
+
+    /* ── Header ── */
+    .brand-row {
+      display: flex; align-items: center; gap: 18px;
+      margin-bottom: 12px;
+    }
+    .brand-text .en {
+      font-family: Cinzel, Georgia, serif;
+      font-size: 30px; font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      text-shadow: 0 0 20px var(--primary-glow);
+    }
+    .brand-text .zh {
+      margin-top: 4px;
+      font-size: 36px; font-weight: 600;
+      letter-spacing: 0.42em;
+      color: color-mix(in oklab, var(--foreground) 90%, transparent);
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 8px 16px; border-radius: 999px;
+      border: 1px solid color-mix(in oklab, var(--primary) 35%, transparent);
+      background: color-mix(in oklab, var(--primary) 8%, transparent);
+      font-size: 14px; font-weight: 600;
+      color: var(--primary); letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+    .badge-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--primary);
+      animation: pulse-dot 1.8s ease-in-out infinite;
+    }
+    .headline {
+      font-size: 26px; font-weight: 700;
+      line-height: 1.45;
+      margin-bottom: 6px;
+    }
+    .headline em {
+      font-style: normal;
+      color: var(--accent);
+    }
+    .subhead {
+      font-size: 17px; color: var(--muted);
+      line-height: 1.55; margin-bottom: 20px;
+    }
+
+    /* ── Loop ring (step indicators) ── */
+    .loop-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .loop-step {
+      flex: 1;
+      text-align: center;
+      padding: 10px 4px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      transition: none;
+    }
+    .loop-step .icon {
+      font-size: 22px;
+      line-height: 1;
+      margin-bottom: 4px;
+      opacity: 0.45;
+    }
+    .loop-step .label {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .loop-step:nth-child(1) { animation: step-active-1 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(2) { animation: step-active-2 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(3) { animation: step-active-3 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(4) { animation: step-active-4 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(5) { animation: step-active-5 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(6) { animation: step-active-6 var(--loop-duration) linear infinite; }
+
+    /* ── Main stage ── */
+    .stage {
+      flex: 1;
+      position: relative;
+      border-radius: 22px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px color-mix(in oklab, var(--primary) 20%, transparent),
+        0 28px 70px rgba(0, 0, 0, 0.55);
+      min-height: 720px;
+      margin-bottom: 18px;
+    }
+    .stage-inner {
+      position: absolute; inset: 0;
+    }
+
+    /* Scene base */
+    .scene {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 28px;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .scene-title {
+      font-family: Cinzel, serif;
+      font-size: 28px;
+      color: var(--primary);
+      letter-spacing: 0.12em;
+      margin-bottom: 8px;
+      text-shadow: 0 0 16px var(--primary-glow);
+    }
+    .scene-desc {
+      font-size: 16px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.55;
+      max-width: 90%;
+      margin-bottom: 24px;
+    }
+
+    .scene-1 { animation: scene-1 var(--loop-duration) linear infinite; }
+    .scene-2 { animation: scene-2 var(--loop-duration) linear infinite; }
+    .scene-3 { animation: scene-3 var(--loop-duration) linear infinite; }
+    .scene-4 { animation: scene-4 var(--loop-duration) linear infinite; }
+    .scene-5 { animation: scene-5 var(--loop-duration) linear infinite; }
+    .scene-6 { animation: scene-6 var(--loop-duration) linear infinite; }
+
+    /* Scene 1: Summon */
+    .summon-ring {
+      position: relative;
+      width: 280px; height: 280px;
+      margin-bottom: 20px;
+    }
+    .summon-ring img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      animation: summon-spin 8s linear infinite, summon-glow 2s ease-in-out infinite;
+    }
+    .summon-char {
+      position: absolute;
+      bottom: -10px; left: 50%;
+      transform: translateX(-50%) scale(0);
+      width: 120px; height: 150px;
+      border-radius: 14px;
+      border: 2px solid var(--primary);
+      overflow: hidden;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 24px var(--primary-glow);
+      animation: char-pop var(--loop-duration) linear infinite;
+    }
+    .summon-char img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+
+    /* Scene 2: Team */
+    .team-row {
+      display: flex; gap: 16px; align-items: flex-end;
+    }
+    .team-card {
+      width: 140px;
+      border-radius: 16px;
+      border: 2px solid color-mix(in oklab, var(--primary) 30%, transparent);
+      overflow: hidden;
+      background: rgba(0,0,0,0.4);
+      transform: translateY(40px);
+      opacity: 0;
+    }
+    .team-card:nth-child(1) { animation: team-in-1 var(--loop-duration) linear infinite; }
+    .team-card:nth-child(2) { animation: team-in-2 var(--loop-duration) linear infinite; height: 200px; }
+    .team-card:nth-child(3) { animation: team-in-3 var(--loop-duration) linear infinite; }
+    .team-card img { width: 100%; height: 180px; object-fit: cover; object-position: top; }
+    .team-card .pwr {
+      padding: 8px;
+      text-align: center;
+      font-family: ui-monospace, monospace;
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 700;
+      background: rgba(0,0,0,0.5);
+    }
+    .team-badge {
+      margin-top: 20px;
+      padding: 10px 24px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      color: var(--bg);
+      background: linear-gradient(90deg, var(--primary), #f5e6a8);
+      opacity: 0;
+      animation: team-badge var(--loop-duration) linear infinite;
+    }
+
+    /* Scene 3: Dungeons */
+    .dungeon-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+    }
+    .dungeon-cell {
+      position: relative;
+      height: 140px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      transform: scale(0.92);
+      opacity: 0.5;
+    }
+    .dungeon-cell img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .dungeon-cell .overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(10,13,18,0.92), transparent 60%);
+      display: flex; flex-direction: column;
+      justify-content: flex-end;
+      padding: 10px 12px;
+    }
+    .dungeon-cell .d-tag {
+      font-family: ui-monospace, monospace;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+    }
+    .dungeon-cell .d-name { font-size: 14px; font-weight: 700; margin-top: 2px; }
+    .dungeon-cell .d-drop {
+      font-size: 12px;
+      color: var(--primary);
+      font-weight: 800;
+      margin-top: 4px;
+    }
+    .dungeon-cell:nth-child(1) { animation: d-highlight-1 var(--loop-duration) linear infinite; }
+    .dungeon-cell:nth-child(2) { animation: d-highlight-2 var(--loop-duration) linear infinite; }
+    .dungeon-cell:nth-child(3) { animation: d-highlight-3 var(--loop-duration) linear infinite; }
+    .dungeon-cell:nth-child(4) { animation: d-highlight-4 var(--loop-duration) linear infinite; }
+
+    /* Scene 4: Materials */
+    .mat-orbit {
+      position: relative;
+      width: 320px; height: 320px;
+    }
+    .mat-center {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      border: 2px dashed color-mix(in oklab, var(--primary) 40%, transparent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-align: center;
+      animation: center-spin 12s linear infinite;
+    }
+    .mat-item {
+      position: absolute;
+      width: 88px; height: 88px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+    .mat-item img { width: 100%; height: 100%; object-fit: cover; }
+    .mat-item .tag {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      text-align: center;
+      font-size: 11px; font-weight: 800;
+      padding: 3px;
+      background: rgba(0,0,0,0.65);
+    }
+    .mat-item.ae { top: 0; left: 50%; transform: translateX(-50%); border-color: #6366f1; animation: orbit-ae var(--loop-duration) linear infinite; }
+    .mat-item.bf { bottom: 0; left: 50%; transform: translateX(-50%); border-color: #ef4444; animation: orbit-bf var(--loop-duration) linear infinite; }
+    .mat-item.mr { top: 50%; left: 0; transform: translateY(-50%); border-color: #22d3ee; animation: orbit-mr var(--loop-duration) linear infinite; }
+    .mat-item.es { top: 50%; right: 0; transform: translateY(-50%); border-color: #a855f7; animation: orbit-es var(--loop-duration) linear infinite; }
+    .mat-item.ae .tag { color: #818cf8; }
+    .mat-item.bf .tag { color: #f87171; }
+    .mat-item.mr .tag { color: #22d3ee; }
+    .mat-item.es .tag { color: #c084fc; }
+
+    /* Scene 5: Synthesis */
+    .synth-wrap {
+      position: relative;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .synth-materials {
+      display: flex; gap: 10px;
+      margin-bottom: 20px;
+    }
+    .synth-mat {
+      width: 64px; height: 64px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      animation: synth-fly var(--loop-duration) linear infinite;
+    }
+    .synth-mat:nth-child(2) { animation-delay: 0.05s; }
+    .synth-mat:nth-child(3) { animation-delay: 0.1s; }
+    .synth-mat:nth-child(4) { animation-delay: 0.15s; }
+    .synth-mat img { width: 100%; height: 100%; object-fit: cover; }
+    .synth-arrow {
+      font-size: 32px;
+      color: var(--primary);
+      margin-bottom: 16px;
+      animation: arrow-pulse 1.2s ease-in-out infinite;
+    }
+    .synth-result {
+      width: 160px; height: 200px;
+      border-radius: 16px;
+      border: 2px solid var(--primary);
+      overflow: hidden;
+      transform: scale(0);
+      box-shadow: 0 0 40px var(--primary-glow);
+      animation: synth-result var(--loop-duration) linear infinite;
+    }
+    .synth-result img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .synth-label {
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+    }
+
+    /* Scene 6: Deep expedition */
+    .expedition {
+      width: 100%;
+      height: 340px;
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
+    }
+    .expedition img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      animation: ken-burns 6s ease-in-out infinite alternate;
+    }
+    .expedition-shade {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(10,13,18,0.95) 0%, transparent 55%);
+    }
+    .expedition-ui {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: 20px;
+    }
+    .expedition-ui .lv {
+      font-family: ui-monospace, monospace;
+      font-size: 13px;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+    }
+    .expedition-ui h3 {
+      font-family: Cinzel, serif;
+      font-size: 26px;
+      color: var(--primary);
+      margin: 6px 0;
+    }
+    .expedition-ui p { font-size: 14px; color: var(--muted); }
+    .chain-tag {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 8px 20px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.25em;
+      color: var(--bg);
+      background: linear-gradient(90deg, var(--accent), #5eead4);
+      animation: chain-flash var(--loop-duration) linear infinite;
+    }
+
+    /* Progress bar */
+    .progress-wrap {
+      height: 4px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      animation: progress-loop var(--loop-duration) linear infinite;
+    }
+
+    /* Materials strip (always visible) */
+    .mat-strip {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    .mat-chip {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.35);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .mat-chip img {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    /* Footer */
+    .footer {
+      flex-shrink: 0;
+      padding: 22px 44px 36px;
+      border-top: 1px solid var(--border);
+      background: linear-gradient(0deg, rgba(0,0,0,0.4), transparent);
+      position: relative; z-index: 2;
+    }
+    .cta {
+      text-align: center;
+      font-family: Cinzel, serif;
+      font-size: 28px; font-weight: 700;
+      letter-spacing: 0.22em;
+      color: var(--primary);
+      text-shadow: 0 0 18px var(--primary-glow);
+      animation: cta-glow 3s ease-in-out infinite;
+    }
+    .cta-sub {
+      text-align: center;
+      font-size: 16px;
+      color: var(--accent);
+      margin-top: 6px;
+      margin-bottom: 12px;
+    }
+    .dis {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── Keyframes ── */
+    @keyframes spin-slow { to { transform: rotate(360deg); } }
+    @keyframes sigil-pulse {
+      0%, 100% { opacity: 0.05; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.1; transform: translate(-50%, -50%) scale(1.03); }
+    }
+    @keyframes float-up {
+      0% { opacity: 0; transform: translateY(20px); }
+      20% { opacity: 0.8; }
+      80% { opacity: 0.6; }
+      100% { opacity: 0; transform: translateY(-120px); }
+    }
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 6px var(--primary-glow); }
+      50% { box-shadow: 0 0 16px var(--primary-glow); transform: scale(1.15); }
+    }
+    @keyframes progress-loop {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+    @keyframes cta-glow {
+      0%, 100% { text-shadow: 0 0 12px var(--primary-glow); }
+      50% { text-shadow: 0 0 28px var(--primary-glow), 0 0 8px var(--accent-glow); }
+    }
+
+    /* Scene visibility: 6 scenes × 3s each in 18s loop */
+    @keyframes scene-1 {
+      0%, 2% { opacity: 0; transform: scale(0.96); }
+      3%, 14% { opacity: 1; transform: scale(1); }
+      17%, 100% { opacity: 0; transform: scale(0.98); }
+    }
+    @keyframes scene-2 {
+      0%, 14% { opacity: 0; }
+      17%, 30% { opacity: 1; }
+      33%, 100% { opacity: 0; }
+    }
+    @keyframes scene-3 {
+      0%, 30% { opacity: 0; }
+      33%, 47% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+    @keyframes scene-4 {
+      0%, 47% { opacity: 0; }
+      50%, 64% { opacity: 1; }
+      67%, 100% { opacity: 0; }
+    }
+    @keyframes scene-5 {
+      0%, 64% { opacity: 0; }
+      67%, 80% { opacity: 1; }
+      83%, 100% { opacity: 0; }
+    }
+    @keyframes scene-6 {
+      0%, 80% { opacity: 0; }
+      83%, 97% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* Step nav highlight */
+    @keyframes step-active-1 {
+      0%, 14% { border-color: color-mix(in oklab, var(--primary) 50%, transparent); background: color-mix(in oklab, var(--primary) 12%, transparent); }
+      17%, 100% { border-color: transparent; background: transparent; }
+    }
+    .loop-step:nth-child(1) .icon { animation: icon-on-1 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(1) .label { animation: label-on-1 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(2) .icon { animation: icon-on-2 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(2) .label { animation: label-on-2 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(3) .icon { animation: icon-on-3 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(3) .label { animation: label-on-3 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(4) .icon { animation: icon-on-4 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(4) .label { animation: label-on-4 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(5) .icon { animation: icon-on-5 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(5) .label { animation: label-on-5 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(6) .icon { animation: icon-on-6 var(--loop-duration) linear infinite; }
+    .loop-step:nth-child(6) .label { animation: label-on-6 var(--loop-duration) linear infinite; }
+
+    @keyframes step-active-2 {
+      0%, 14% { border-color: transparent; background: transparent; }
+      17%, 30% { border-color: color-mix(in oklab, var(--primary) 50%, transparent); background: color-mix(in oklab, var(--primary) 12%, transparent); }
+      33%, 100% { border-color: transparent; background: transparent; }
+    }
+    @keyframes step-active-3 {
+      0%, 30% { border-color: transparent; background: transparent; }
+      33%, 47% { border-color: color-mix(in oklab, var(--primary) 50%, transparent); background: color-mix(in oklab, var(--primary) 12%, transparent); }
+      50%, 100% { border-color: transparent; background: transparent; }
+    }
+    @keyframes step-active-4 {
+      0%, 47% { border-color: transparent; background: transparent; }
+      50%, 64% { border-color: color-mix(in oklab, var(--primary) 50%, transparent); background: color-mix(in oklab, var(--primary) 12%, transparent); }
+      67%, 100% { border-color: transparent; background: transparent; }
+    }
+    @keyframes step-active-5 {
+      0%, 64% { border-color: transparent; background: transparent; }
+      67%, 80% { border-color: color-mix(in oklab, var(--primary) 50%, transparent); background: color-mix(in oklab, var(--primary) 12%, transparent); }
+      83%, 100% { border-color: transparent; background: transparent; }
+    }
+    @keyframes step-active-6 {
+      0%, 80% { border-color: transparent; background: transparent; }
+      83%, 97% { border-color: color-mix(in oklab, var(--primary) 50%, transparent); background: color-mix(in oklab, var(--primary) 12%, transparent); }
+      100% { border-color: transparent; background: transparent; }
+    }
+
+    @keyframes icon-on-1 { 0%,14% { opacity:1; transform:scale(1.1); } 17%,100% { opacity:0.45; transform:scale(1); } }
+    @keyframes label-on-1 { 0%,14% { color:var(--primary); } 17%,100% { color:var(--muted); } }
+    @keyframes icon-on-2 { 0%,14% { opacity:0.45; } 17%,30% { opacity:1; transform:scale(1.1); } 33%,100% { opacity:0.45; transform:scale(1); } }
+    @keyframes label-on-2 { 0%,14% { color:var(--muted); } 17%,30% { color:var(--primary); } 33%,100% { color:var(--muted); } }
+    @keyframes icon-on-3 { 0%,30% { opacity:0.45; } 33%,47% { opacity:1; transform:scale(1.1); } 50%,100% { opacity:0.45; transform:scale(1); } }
+    @keyframes label-on-3 { 0%,30% { color:var(--muted); } 33%,47% { color:var(--primary); } 50%,100% { color:var(--muted); } }
+    @keyframes icon-on-4 { 0%,47% { opacity:0.45; } 50%,64% { opacity:1; transform:scale(1.1); } 67%,100% { opacity:0.45; transform:scale(1); } }
+    @keyframes label-on-4 { 0%,47% { color:var(--muted); } 50%,64% { color:var(--primary); } 67%,100% { color:var(--muted); } }
+    @keyframes icon-on-5 { 0%,64% { opacity:0.45; } 67%,80% { opacity:1; transform:scale(1.1); } 83%,100% { opacity:0.45; transform:scale(1); } }
+    @keyframes label-on-5 { 0%,64% { color:var(--muted); } 67%,80% { color:var(--primary); } 83%,100% { color:var(--muted); } }
+    @keyframes icon-on-6 { 0%,80% { opacity:0.45; } 83%,97% { opacity:1; transform:scale(1.1); } 100% { opacity:0.45; transform:scale(1); } }
+    @keyframes label-on-6 { 0%,80% { color:var(--muted); } 83%,97% { color:var(--primary); } 100% { color:var(--muted); } }
+
+    @keyframes summon-spin { to { transform: rotate(360deg); } }
+    @keyframes summon-glow {
+      0%, 100% { filter: drop-shadow(0 0 12px var(--accent-glow)); }
+      50% { filter: drop-shadow(0 0 28px var(--primary-glow)); }
+    }
+    @keyframes char-pop {
+      0%, 5% { transform: translateX(-50%) scale(0); opacity: 0; }
+      8%, 14% { transform: translateX(-50%) scale(1.08); opacity: 1; }
+      16%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    }
+
+    @keyframes team-in-1 {
+      0%, 16% { transform: translateY(40px); opacity: 0; }
+      20%, 30% { transform: translateY(0); opacity: 1; }
+      33%, 100% { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes team-in-2 {
+      0%, 18% { transform: translateY(40px); opacity: 0; }
+      22%, 30% { transform: translateY(0); opacity: 1; }
+      33%, 100% { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes team-in-3 {
+      0%, 20% { transform: translateY(40px); opacity: 0; }
+      24%, 30% { transform: translateY(0); opacity: 1; }
+      33%, 100% { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes team-badge {
+      0%, 24% { opacity: 0; transform: scale(0.8); }
+      27%, 30% { opacity: 1; transform: scale(1); }
+      33%, 100% { opacity: 0; }
+    }
+
+    @keyframes d-highlight-1 {
+      0%, 32% { transform: scale(0.92); opacity: 0.5; box-shadow: none; }
+      35%, 40% { transform: scale(1); opacity: 1; box-shadow: 0 0 20px rgba(99,102,241,0.4); }
+      43%, 100% { transform: scale(0.92); opacity: 0.5; box-shadow: none; }
+    }
+    @keyframes d-highlight-2 {
+      0%, 37% { transform: scale(0.92); opacity: 0.5; }
+      40%, 45% { transform: scale(1); opacity: 1; box-shadow: 0 0 20px rgba(239,68,68,0.4); }
+      48%, 100% { transform: scale(0.92); opacity: 0.5; box-shadow: none; }
+    }
+    @keyframes d-highlight-3 {
+      0%, 42% { transform: scale(0.92); opacity: 0.5; }
+      45%, 50% { transform: scale(1); opacity: 1; box-shadow: 0 0 20px rgba(34,211,238,0.4); }
+      53%, 100% { transform: scale(0.92); opacity: 0.5; box-shadow: none; }
+    }
+    @keyframes d-highlight-4 {
+      0%, 47% { transform: scale(0.92); opacity: 0.5; }
+      50%, 55% { transform: scale(1); opacity: 1; box-shadow: 0 0 20px rgba(168,85,247,0.4); }
+      58%, 100% { transform: scale(0.92); opacity: 0.5; box-shadow: none; }
+    }
+
+    @keyframes center-spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+    @keyframes orbit-ae {
+      0%, 49% { transform: translateX(-50%) scale(0.8); opacity: 0.5; }
+      52%, 62% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+      65%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    }
+    @keyframes orbit-bf {
+      0%, 52% { transform: translateX(-50%) scale(0.8); opacity: 0.5; }
+      55%, 62% { transform: translateX(-50%) scale(1.1); opacity: 1; }
+      65%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    }
+    @keyframes orbit-mr {
+      0%, 55% { transform: translateY(-50%) scale(0.8); opacity: 0.5; }
+      58%, 62% { transform: translateY(-50%) scale(1.1); opacity: 1; }
+      65%, 100% { transform: translateY(-50%) scale(1); opacity: 1; }
+    }
+    @keyframes orbit-es {
+      0%, 58% { transform: translateY(-50%) scale(0.8); opacity: 0.5; }
+      61%, 62% { transform: translateY(-50%) scale(1.1); opacity: 1; }
+      65%, 100% { transform: translateY(-50%) scale(1); opacity: 1; }
+    }
+
+    @keyframes synth-fly {
+      0%, 66% { transform: translateY(0); opacity: 1; }
+      72% { transform: translateY(40px) scale(0.6); opacity: 0.3; }
+      78%, 100% { transform: translateY(40px) scale(0); opacity: 0; }
+    }
+    @keyframes arrow-pulse {
+      0%, 100% { opacity: 0.5; transform: translateY(0); }
+      50% { opacity: 1; transform: translateY(4px); }
+    }
+    @keyframes synth-result {
+      0%, 72% { transform: scale(0); opacity: 0; }
+      76%, 80% { transform: scale(1.12); opacity: 1; }
+      83%, 100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes ken-burns {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.08); }
+    }
+    @keyframes chain-flash {
+      0%, 84% { opacity: 0; transform: scale(0.9); }
+      88%, 95% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="bg" aria-hidden="true">
+      <div class="bg-hero"></div>
+      <div class="bg-site"></div>
+      <div class="bg-grad"></div>
+      <div class="bg-pattern"></div>
+      <div class="bg-sigil"></div>
+    </div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <div class="particles" aria-hidden="true">
+      <span class="particle" style="left:12%;top:70%;--dur:7s;--delay:0s;background:var(--primary);box-shadow:0 0 12px var(--primary-glow)"></span>
+      <span class="particle" style="left:28%;top:82%;--dur:8s;--delay:1.2s;background:var(--accent);box-shadow:0 0 12px var(--accent-glow)"></span>
+      <span class="particle" style="left:55%;top:75%;--dur:6s;--delay:0.5s;background:var(--primary);box-shadow:0 0 12px var(--primary-glow)"></span>
+      <span class="particle" style="left:78%;top:68%;--dur:9s;--delay:2s;background:var(--accent);box-shadow:0 0 12px var(--accent-glow)"></span>
+      <span class="particle" style="left:42%;top:88%;--dur:7.5s;--delay:3s;background:var(--primary);box-shadow:0 0 12px var(--primary-glow)"></span>
+    </div>
+
+    <div class="content">
+      <div class="brand-row">
+        <svg viewBox="0 0 64 64" width="52" height="52" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f5d28a" />
+              <stop offset="45%" stop-color="#d4af37" />
+              <stop offset="100%" stop-color="#7a4f12" />
+            </linearGradient>
+          </defs>
+          <circle cx="32" cy="32" r="30" fill="url(#g)" />
+          <circle cx="32" cy="32" r="24" fill="none" stroke="rgba(20,184,166,0.55)" stroke-width="0.6" stroke-dasharray="1.5 2.5" />
+          <g stroke="#0a0d12" stroke-width="3.5" stroke-linecap="round" fill="none">
+            <path d="M19 46 L32 17 L45 46" /><path d="M25 36 L39 36" />
+          </g>
+        </svg>
+        <div class="brand-text">
+          <p class="en">Rune Abyss</p>
+          <p class="zh">符 文 深 渊</p>
+        </div>
+      </div>
+
+      <div class="badge"><span class="badge-dot"></span>V48 专产 · BSC 链游</div>
+      <p class="headline">组队远征 · 专产刷料 · <em>100% 合成</em></p>
+      <p class="subhead">材料零协议增发 · 六关副本 · 钱包即账号</p>
+
+      <div class="loop-nav" aria-label="玩法循环步骤">
+        <div class="loop-step"><div class="icon">✦</div><div class="label">召唤</div></div>
+        <div class="loop-step"><div class="icon">⚔</div><div class="label">编队</div></div>
+        <div class="loop-step"><div class="icon">🏰</div><div class="label">专产</div></div>
+        <div class="loop-step"><div class="icon">◆</div><div class="label">材料</div></div>
+        <div class="loop-step"><div class="icon">⚗</div><div class="label">合成</div></div>
+        <div class="loop-step"><div class="icon">∞</div><div class="label">远征</div></div>
+      </div>
+
+      <div class="progress-wrap" aria-hidden="true"><div class="progress-bar"></div></div>
+
+      <div class="stage">
+        <div class="stage-inner">
+          <!-- Scene 1: Summon -->
+          <div class="scene scene-1">
+            <p class="scene-title">召唤冒险者</p>
+            <p class="scene-desc">消耗 $草根社 抽取角色 NFT<br/>全服召唤上限约 6,000 · 合成无上限</p>
+            <div class="summon-ring">
+              <img src="/rune-sigil.png" alt="" />
+              <div class="summon-char"><img src="/characters/r1-apprentice.jpg" alt="" /></div>
+            </div>
+          </div>
+
+          <!-- Scene 2: Team -->
+          <div class="scene scene-2">
+            <p class="scene-title">三人编队</p>
+            <p class="scene-desc">3 角色成队 · 单账号最多 8 队<br/>战力叠加决定可挑战副本等级</p>
+            <div class="team-row">
+              <div class="team-card"><img src="/characters/r2-adept.jpg" alt="" /><div class="pwr">PWR 42</div></div>
+              <div class="team-card"><img src="/characters/r3-elite.jpg" alt="" /><div class="pwr">PWR 88</div></div>
+              <div class="team-card"><img src="/characters/r4-hero.jpg" alt="" /><div class="pwr">PWR 135</div></div>
+            </div>
+            <div class="team-badge">总战力 265 → 可进 D3</div>
+          </div>
+
+          <!-- Scene 3: Specialty dungeons -->
+          <div class="scene scene-3">
+            <p class="scene-title">V48 六关专产</p>
+            <p class="scene-desc">D1–D4 各产一种材料 · 并行刷关<br/>成功全额 · 失败仍得 1/4 · 防连跪保底</p>
+            <div class="dungeon-grid">
+              <div class="dungeon-cell">
+                <img src="/dungeons/d1-crumbling-altar.jpg" alt="" />
+                <div class="overlay">
+                  <span class="d-tag">D1 · ≥45</span>
+                  <span class="d-name">崩坏祭坛</span>
+                  <span class="d-drop">专产 AE</span>
+                </div>
+              </div>
+              <div class="dungeon-cell">
+                <img src="/dungeons/d2-whispering-caverns.jpg" alt="" />
+                <div class="overlay">
+                  <span class="d-tag">D2 · ≥90</span>
+                  <span class="d-name">低语洞窟</span>
+                  <span class="d-drop">专产 BF</span>
+                </div>
+              </div>
+              <div class="dungeon-cell">
+                <img src="/dungeons/d3-frozen-sanctum.jpg" alt="" />
+                <div class="overlay">
+                  <span class="d-tag">D3 · ≥180</span>
+                  <span class="d-name">冰封圣所</span>
+                  <span class="d-drop">专产 MR</span>
+                </div>
+              </div>
+              <div class="dungeon-cell">
+                <img src="/dungeons/d4-ember-forge.jpg" alt="" />
+                <div class="overlay">
+                  <span class="d-tag">D4 · ≥300</span>
+                  <span class="d-name">余烬熔炉</span>
+                  <span class="d-drop">专产 ES</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scene 4: Materials -->
+          <div class="scene scene-4">
+            <p class="scene-title">四类材料 · 零增发</p>
+            <p class="scene-desc">AE / BF / MR / ES 仅来自副本或 USDT 内盘<br/>协议不凭空铸造材料</p>
+            <div class="mat-orbit">
+              <div class="mat-center">零<br/>增发</div>
+              <div class="mat-item ae"><img src="/materials/ae-arcane-essence.jpg" alt="" /><span class="tag">AE</span></div>
+              <div class="mat-item bf"><img src="/materials/bf-blood-fragment.jpg" alt="" /><span class="tag">BF</span></div>
+              <div class="mat-item mr"><img src="/materials/mr-moon-rune.jpg" alt="" /><span class="tag">MR</span></div>
+              <div class="mat-item es"><img src="/materials/es-eldritch-shard.jpg" alt="" /><span class="tag">ES</span></div>
+            </div>
+          </div>
+
+          <!-- Scene 5: Synthesis -->
+          <div class="scene scene-5">
+            <p class="scene-title">确定性合成</p>
+            <p class="scene-desc">材料 + $草根社 → 100% 成功<br/>全部销毁入黑洞 · 产出更高稀有度 NFT</p>
+            <div class="synth-wrap">
+              <div class="synth-materials">
+                <div class="synth-mat"><img src="/materials/ae-arcane-essence.jpg" alt="" /></div>
+                <div class="synth-mat"><img src="/materials/bf-blood-fragment.jpg" alt="" /></div>
+                <div class="synth-mat"><img src="/materials/mr-moon-rune.jpg" alt="" /></div>
+                <div class="synth-mat"><img src="/materials/es-eldritch-shard.jpg" alt="" /></div>
+              </div>
+              <div class="synth-arrow">↓</div>
+              <div class="synth-result"><img src="/characters/r5-legendary.jpg" alt="" /></div>
+              <p class="synth-label">见习 → 熟练 → 精英 → 英雄 → 传奇</p>
+            </div>
+          </div>
+
+          <!-- Scene 6: Deep expedition -->
+          <div class="scene scene-6">
+            <p class="scene-title">解锁更深副本</p>
+            <p class="scene-desc">合成更强角色 · 挑战 D5/D6 混合关<br/>远征链 · 深渊周历 · 赛季积分榜</p>
+            <div class="expedition">
+              <img src="/dungeons/d6-abyssal-throne.jpg" alt="" />
+              <div class="expedition-shade"></div>
+              <div class="expedition-ui">
+                <span class="lv">D6 · PWR ≥550</span>
+                <h3>深渊王座</h3>
+                <p>混合掉落 · 链上即时结算</p>
+                <span class="chain-tag">循环 · 再远征</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mat-strip" aria-hidden="true">
+        <span class="mat-chip"><img src="/materials/ae-arcane-essence.jpg" alt="" />AE</span>
+        <span class="mat-chip"><img src="/materials/bf-blood-fragment.jpg" alt="" />BF</span>
+        <span class="mat-chip"><img src="/materials/mr-moon-rune.jpg" alt="" />MR</span>
+        <span class="mat-chip"><img src="/materials/es-eldritch-shard.jpg" alt="" />ES</span>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p class="cta">RUNEAS.XYZ</p>
+      <p class="cta-sub">https://x.com/RuneAbyssAI</p>
+      <p class="dis">不构成投资建议 · 链上操作不可逆 · 以链上参数为准</p>
+    </footer>
+  </div>
+</body>
+</html>
