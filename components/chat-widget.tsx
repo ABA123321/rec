@@ -4,7 +4,7 @@ import * as React from "react"
 import { Send, Loader2, ChevronDown, Wallet } from "lucide-react"
 
 import { useGame } from "@/components/providers/game-provider"
-import { RuneAbyssLogo } from "@/components/brand/rune-abyss-logo"
+import { GrassrootsTokenIcon } from "@/components/brand/grassroots-token-icon"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -49,7 +49,7 @@ export function ChatWidget() {
   // 未连接钱包时禁止打开
   const handleOpenClick = React.useCallback(() => {
     if (!connected) {
-      setError("请先连接钱包后再使用符文妹妹")
+      setError("请先连接钱包后再使用草根社【丝袜妹妹】")
       return
     }
     setOpen(true)
@@ -140,15 +140,15 @@ export function ChatWidget() {
           open && "scale-110 border-primary/60 shadow-primary/50",
           !connected && "cursor-not-allowed opacity-60 hover:scale-100",
         )}
-        aria-label={connected ? "打开符文妹妹聊天助手" : "请先连接钱包"}
-        title={connected ? "符文妹妹" : "需要连接钱包"}
+        aria-label={connected ? "打开草根社【丝袜妹妹】聊天助手" : "请先连接钱包"}
+        title={connected ? "草根社【丝袜妹妹】" : "需要连接钱包"}
       >
         {!connected ? (
           <Wallet className="size-6" />
         ) : (
           <>
             <div className="absolute inset-0 rounded-full opacity-20 blur-md" />
-            <RuneAbyssLogo size={24} title={null} />
+            <GrassrootsTokenIcon size={24} title={null} />
           </>
         )}
       </button>
@@ -159,9 +159,9 @@ export function ChatWidget() {
           <DialogHeader className="border-b border-border px-6 py-4">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <RuneAbyssLogo size={20} title={null} />
+                <GrassrootsTokenIcon size={20} title={null} />
                 <div>
-                  <DialogTitle className="font-serif">符文妹妹</DialogTitle>
+                  <DialogTitle className="font-serif">草根社【丝袜妹妹】</DialogTitle>
                   {currentModel && (
                     <DialogDescription className="text-xs">
                       {currentModel.icon} {currentModel.description}
@@ -213,7 +213,7 @@ export function ChatWidget() {
               <div className="flex h-32 items-center justify-center text-center">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    你好呀！我是符文妹妹 {currentModel?.icon}
+                    你好呀！我是草根社【丝袜妹妹】 {currentModel?.icon}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     有关于符文深渊的问题吗？尽管问我吧！
@@ -247,7 +247,7 @@ export function ChatWidget() {
                     <div className="flex items-center gap-1 rounded-lg bg-background/60 px-3 py-2">
                       <Loader2 className="size-3 animate-spin text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">
-                        符文妹妹思考中…
+                        草根社【丝袜妹妹】思考中…
                       </span>
                     </div>
                   </div>
@@ -261,7 +261,7 @@ export function ChatWidget() {
           <div className="border-t border-border px-6 py-3">
             <form onSubmit={handleSubmit} className="flex gap-2">
               <Input
-                placeholder="向符文妹妹提问…"
+                placeholder="向草根社【丝袜妹妹】提问…"
                 value={input}
                 onChange={(e) => {
                   setInput(e.target.value)

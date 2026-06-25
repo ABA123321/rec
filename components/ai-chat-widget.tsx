@@ -5,7 +5,7 @@ import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import { Send, X, MessageCircle } from 'lucide-react'
 
-import { RuneAbyssLogo } from '@/components/brand/rune-abyss-logo'
+import { GrassrootsTokenIcon } from '@/components/brand/grassroots-token-icon'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -53,7 +53,7 @@ export function ChatWidget() {
       >
         {/* 品牌Logo作为按钮图标 */}
         <div className="scale-90">
-          <RuneAbyssLogo size={20} title={null} />
+          <GrassrootsTokenIcon size={20} title={null} />
         </div>
         {/* 未读消息气泡 */}
         {messages.length > 0 && (
@@ -73,9 +73,9 @@ export function ChatWidget() {
           <DialogHeader className="border-b border-border bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3 rounded-t-lg">
             <div className="flex items-center gap-2">
               <div className="scale-75">
-                <RuneAbyssLogo size={20} title={null} />
+                <GrassrootsTokenIcon size={20} title={null} />
               </div>
-              <DialogTitle className="font-serif text-lg">符文助手</DialogTitle>
+              <DialogTitle className="font-serif text-lg">草根社【丝袜妹妹】</DialogTitle>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               关于游戏的任何疑问，尽管问我吧
@@ -88,7 +88,7 @@ export function ChatWidget() {
               <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
                 <MessageCircle className="size-8 text-muted-foreground/40" />
                 <p className="text-sm text-muted-foreground">
-                  你好！我是符文深渊的AI助手。
+                  你好！我是草根社【丝袜妹妹】。
                   <br />
                   有任何关于游戏的问题吗？
                 </p>
