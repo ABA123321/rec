@@ -5,8 +5,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { LocaleProvider } from "@/components/providers/locale-provider"
 import { GameProvider } from "@/components/providers/game-provider"
 import { GameBackdrop } from "@/components/game/game-backdrop"
-import { ChatWidgetProvider } from "@/components/chat-widget-provider"
-import { ReferralBindModal } from "@/components/referral-bind-modal"
+import { DeferredLayoutWidgets } from "@/components/deferred-layout-widgets"
 import "./globals.css"
 
 const geist = Geist({
@@ -37,7 +36,7 @@ export const metadata: Metadata = {
   keywords: [
     "Rune Abyss",
     "符文深渊",
-    "$REBC",
+    "$草根社",
     "BSC",
     "Web3 Game",
     "GameFi",
@@ -96,8 +95,7 @@ export default function RootLayout({
         <LocaleProvider>
           <GameProvider>
             <div className="relative z-10">{children}</div>
-            <ChatWidgetProvider />
-            <ReferralBindModal />
+            <DeferredLayoutWidgets />
             <Toaster
               theme="dark"
               position="top-right"

@@ -5,7 +5,6 @@ import Link from "next/link"
 import {
   ArrowRight,
   BookOpen,
-  ExternalLink,
   FlaskConical,
   Map,
   ScrollText,
@@ -15,6 +14,7 @@ import {
   Zap,
 } from "lucide-react"
 
+import { GrassrootsTokenIcon } from "@/components/brand/grassroots-token-icon"
 import { RuneAbyssLogo } from "@/components/brand/rune-abyss-logo"
 import { RuneSigil } from "@/components/brand/rune-sigil"
 import { LandingEcosystemStrip } from "@/components/landing/ecosystem-strip"
@@ -27,7 +27,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import {
   DUNGEONS,
   RARITIES,
-  SUMMON_BASE_COST,
+  SUMMON_BASE_USDT,
+  SUMMON_TIER_SIZE,
   TOTAL_CHAR_CAP,
   ENERGY_PRICE_USDT,
   REFERRAL_DIRECT,
@@ -141,17 +142,6 @@ export default function LandingPage() {
                 {m.common.officialDocs}
               </Link>
             </Button>
-            <Button asChild variant="outline" size="lg" className="gap-2 border-primary/30 bg-primary/5">
-              <a
-                href="https://www.rebc.xyz/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`${L.rebcMintCta} ${L.openInNewTab}`}
-              >
-                {L.rebcMintCta}
-                <ExternalLink className="size-4 shrink-0 opacity-80" aria-hidden />
-              </a>
-            </Button>
           </div>
 
           <dl className="mt-6 grid w-full max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
@@ -257,7 +247,8 @@ export default function LandingPage() {
           {FEATURE_BLOCKS.map(({ icon: Icon, href, featureIndex }) => {
             const f = L.features[featureIndex]
             const desc = interpolate(f.desc, {
-              summonCost: SUMMON_BASE_COST.toLocaleString(),
+              summonUsdt: String(SUMMON_BASE_USDT),
+              summonStep: SUMMON_TIER_SIZE.toLocaleString(),
               cap: TOTAL_CHAR_CAP.toLocaleString(),
               dungeonCount: String(DUNGEONS.length),
               feePct,
@@ -313,7 +304,10 @@ export default function LandingPage() {
             <div className="absolute inset-0 bg-gradient-to-tr from-background/40 via-transparent to-transparent" />
             <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-3">
               <div>
-                <div className="font-serif text-2xl text-glow-gold">$REBC</div>
+                <div className="flex items-center gap-2 font-serif text-2xl text-glow-gold">
+                  <GrassrootsTokenIcon size={28} title={null} />
+                  $草根社
+                </div>
                 <div className="text-xs text-muted-foreground">{L.adventTagline}</div>
               </div>
               <Button asChild size="sm" variant="outline" className="gap-2">

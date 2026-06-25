@@ -9,7 +9,7 @@ const nextConfig = {
     optimizePackageImports: ["lucide-react"],
   },
   images: {
-    unoptimized: true,
+    formats: ["image/avif", "image/webp"],
   },
 }
 

@@ -1,14 +1,5 @@
-"use client"
-
-import { ResponsiveGate } from "@/components/responsive-gate"
-import { DesktopMarketPage } from "@/components/desktop/desktop-market-page"
-import { MobileMarketPage } from "@/components/mobile/mobile-market-page"
+import { MarketGamePage } from "@/components/responsive-game-pages"
 
 export default function MarketPage() {
-  return (
-    <ResponsiveGate
-      desktop={<DesktopMarketPage />}
-      mobile={<MobileMarketPage />}
-    />
-  )
+  return <MarketGamePage />
 }

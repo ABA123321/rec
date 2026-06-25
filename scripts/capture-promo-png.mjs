@@ -72,6 +72,12 @@ const JOBS = [
     h: 1920,
     file: "poster-mobile-full-project-ai.png",
   },
+  {
+    path: "/promo/poster-dungeon-materials-keyart.html",
+    w: 1080,
+    h: 1920,
+    file: "poster-dungeon-materials-keyart.png",
+  },
 ]
 
 function parseArgs() {
